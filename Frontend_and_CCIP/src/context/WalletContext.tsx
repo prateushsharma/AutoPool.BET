@@ -86,31 +86,55 @@ function walletReducer(state: WalletState, action: WalletAction): WalletState {
 export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(walletReducer, initialState);
 
-  // Check if wallet is already connected on page load
+  // Check for MetaMask and existing connection on page load
   useEffect(() => {
-    checkConnection();
+    checkMetaMaskConnection();
     setupEventListeners();
   }, []);
 
-  const checkConnection = async () => {
-    if (typeof window.ethereum !== 'undefined') {
-      try {
-        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-        if (accounts.length > 0) {
-          await getWalletInfo(accounts[0]);
-        }
-      } catch (error) {
-        console.error('Error checking wallet connection:', error);
+  const isMetaMaskInstalled = (): boolean => {
+    return typeof window.ethereum !== 'undefined' && window.ethereum.isMetaMask === true;
+  };
+
+  const checkMetaMaskConnection = async () => {
+    if (!isMetaMaskInstalled()) {
+      return;
+    }
+
+    try {
+      // Check if already connected
+      const accounts = await window.ethereum.request({ 
+        method: 'eth_accounts' 
+      });
+      
+      if (accounts.length > 0) {
+        await getWalletInfo(accounts[0]);
       }
+    } catch (error) {
+      console.error('Error checking MetaMask connection:', error);
     }
   };
 
   const setupEventListeners = () => {
-    if (typeof window.ethereum !== 'undefined') {
-      window.ethereum.on('accountsChanged', handleAccountsChanged);
-      window.ethereum.on('chainChanged', handleChainChanged);
-      window.ethereum.on('disconnect', handleDisconnect);
-    }
+    if (!isMetaMaskInstalled()) return;
+
+    // Listen for account changes
+    window.ethereum.on('accountsChanged', handleAccountsChanged);
+    
+    // Listen for chain changes
+    window.ethereum.on('chainChanged', handleChainChanged);
+    
+    // Listen for disconnect
+    window.ethereum.on('disconnect', handleDisconnect);
+
+    // Cleanup function
+    return () => {
+      if (window.ethereum && window.ethereum.removeListener) {
+        window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+        window.ethereum.removeListener('chainChanged', handleChainChanged);
+        window.ethereum.removeListener('disconnect', handleDisconnect);
+      }
+    };
   };
 
   const handleAccountsChanged = (accounts: string[]) => {
@@ -134,6 +158,15 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         }
       });
       refreshBalance();
+    } else {
+      // Unsupported chain
+      dispatch({
+        type: 'UPDATE_CHAIN',
+        payload: {
+          chainId: numChainId,
+          chainName: 'Unsupported Network'
+        }
+      });
     }
   };
 
@@ -143,22 +176,27 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   const getWalletInfo = async (address: string): Promise<void> => {
     try {
-      const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+      // Get current chain ID
+      const chainId = await window.ethereum.request({ 
+        method: 'eth_chainId' 
+      });
       const numChainId = parseInt(chainId, 16);
       const chainInfo = SUPPORTED_CHAINS[numChainId];
       
+      // Get balance
       const balance = await window.ethereum.request({
         method: 'eth_getBalance',
         params: [address, 'latest']
       });
       
+      // Convert balance from wei to ETH
       const balanceInEth = (parseInt(balance, 16) / Math.pow(10, 18)).toFixed(4);
       
       const walletInfo: WalletInfo = {
         address,
         balance: balanceInEth,
         chainId: numChainId,
-        chainName: chainInfo?.name || 'Unknown Network',
+        chainName: chainInfo?.name || `Chain ${numChainId}`,
         isConnected: true
       };
 
@@ -170,28 +208,42 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   const connectWallet = async (): Promise<void> => {
-    if (typeof window.ethereum === 'undefined') {
-      dispatch({ type: 'CONNECT_ERROR', payload: 'Please install MetaMask or another Web3 wallet' });
+    // Check if MetaMask is installed
+    if (!isMetaMaskInstalled()) {
+      dispatch({ 
+        type: 'CONNECT_ERROR', 
+        payload: 'MetaMask not detected. Please install MetaMask browser extension.' 
+      });
+      
+      // Open MetaMask download page
+      window.open('https://metamask.io/download/', '_blank');
       return;
     }
 
     dispatch({ type: 'CONNECT_START' });
 
     try {
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      // Request account access
+      const accounts = await window.ethereum.request({
+        method: 'eth_requestAccounts'
+      });
+
       if (accounts.length > 0) {
         await getWalletInfo(accounts[0]);
       } else {
         dispatch({ type: 'CONNECT_ERROR', payload: 'No accounts found' });
       }
     } catch (error: any) {
-      console.error('Wallet connection error:', error);
+      console.error('MetaMask connection error:', error);
       
-      let errorMessage = 'Failed to connect wallet';
+      let errorMessage = 'Failed to connect to MetaMask';
+      
       if (error.code === 4001) {
-        errorMessage = 'Wallet connection rejected by user';
+        errorMessage = 'Connection rejected. Please try again and approve the connection.';
       } else if (error.code === -32002) {
-        errorMessage = 'Wallet connection request is already pending';
+        errorMessage = 'Connection request already pending. Please check MetaMask.';
+      } else if (error.code === -32603) {
+        errorMessage = 'Internal error. Please try restarting MetaMask.';
       }
       
       dispatch({ type: 'CONNECT_ERROR', payload: errorMessage });
@@ -203,8 +255,8 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   const switchChain = async (chainId: number): Promise<void> => {
-    if (typeof window.ethereum === 'undefined') {
-      throw new Error('Wallet not available');
+    if (!isMetaMaskInstalled()) {
+      throw new Error('MetaMask not available');
     }
 
     const chainInfo = SUPPORTED_CHAINS[chainId];
@@ -213,14 +265,16 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
 
     try {
+      // Try to switch to the chain
       await window.ethereum.request({
         method: 'wallet_switchEthereumChain',
         params: [{ chainId: `0x${chainId.toString(16)}` }]
       });
     } catch (error: any) {
-      // Chain not added to wallet
+      // Chain not added to MetaMask
       if (error.code === 4902) {
         try {
+          // Add the chain to MetaMask
           await window.ethereum.request({
             method: 'wallet_addEthereumChain',
             params: [{
@@ -236,7 +290,7 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             }]
           });
         } catch (addError) {
-          throw new Error('Failed to add network to wallet');
+          throw new Error('Failed to add network to MetaMask');
         }
       } else {
         throw new Error('Failed to switch network');
@@ -245,7 +299,7 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   const refreshBalance = async (): Promise<void> => {
-    if (!state.wallet?.address) return;
+    if (!state.wallet?.address || !isMetaMaskInstalled()) return;
 
     try {
       const balance = await window.ethereum.request({

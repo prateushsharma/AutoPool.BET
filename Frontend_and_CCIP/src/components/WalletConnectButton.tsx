@@ -26,6 +26,19 @@ const WalletConnectButton: React.FC<WalletConnectButtonProps> = ({
     return num.toFixed(3);
   };
 
+  const isMetaMaskInstalled = (): boolean => {
+    return typeof window.ethereum !== 'undefined' && window.ethereum.isMetaMask === true;
+  };
+
+  const handleConnect = () => {
+    if (!isMetaMaskInstalled()) {
+      // Open MetaMask download page
+      window.open('https://metamask.io/download/', '_blank');
+      return;
+    }
+    connectWallet();
+  };
+
   if (wallet?.isConnected) {
     return (
       <div className={`wallet-connected ${size} ${className}`}>
@@ -43,6 +56,9 @@ const WalletConnectButton: React.FC<WalletConnectButtonProps> = ({
           <div className="wallet-balance">
             {formatBalance(wallet.balance)} ETH
           </div>
+          <div className="wallet-network">
+            {wallet.chainName}
+          </div>
         </div>
       </div>
     );
@@ -52,7 +68,7 @@ const WalletConnectButton: React.FC<WalletConnectButtonProps> = ({
     <div className={`wallet-connect-container ${className}`}>
       <button
         className={`wallet-connect-btn ${size} ${isConnecting ? 'connecting' : ''}`}
-        onClick={connectWallet}
+        onClick={handleConnect}
         disabled={isConnecting}
       >
         {isConnecting ? (
@@ -62,8 +78,8 @@ const WalletConnectButton: React.FC<WalletConnectButtonProps> = ({
           </>
         ) : (
           <>
-            <span className="wallet-icon">👛</span>
-            Connect Wallet
+            <span className="wallet-icon">🦊</span>
+            {isMetaMaskInstalled() ? 'Connect MetaMask' : 'Install MetaMask'}
           </>
         )}
       </button>
@@ -72,6 +88,26 @@ const WalletConnectButton: React.FC<WalletConnectButtonProps> = ({
         <div className="wallet-error">
           <span className="error-icon">⚠️</span>
           <span className="error-text">{error}</span>
+          {!isMetaMaskInstalled() && (
+            <button 
+              className="install-btn"
+              onClick={() => window.open('https://metamask.io/download/', '_blank')}
+            >
+              Install MetaMask
+            </button>
+          )}
+        </div>
+      )}
+      
+      {!isMetaMaskInstalled() && (
+        <div className="metamask-info">
+          <p>MetaMask is required to use this application</p>
+          <button 
+            className="install-metamask-btn"
+            onClick={() => window.open('https://metamask.io/download/', '_blank')}
+          >
+            🦊 Download MetaMask
+          </button>
         </div>
       )}
     </div>

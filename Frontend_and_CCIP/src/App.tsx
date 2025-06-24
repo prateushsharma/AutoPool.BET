@@ -12,6 +12,10 @@ import './App.css';
 
 // Landing page for non-connected users
 const LandingPage: React.FC = () => {
+  const isMetaMaskInstalled = (): boolean => {
+    return typeof window.ethereum !== 'undefined' && window.ethereum.isMetaMask === true;
+  };
+
   return (
     <div className="landing-page">
       <div className="landing-container">
@@ -22,7 +26,7 @@ const LandingPage: React.FC = () => {
             Next-generation betting powered by artificial intelligence
           </p>
           <p className="hero-description">
-            Connect your wallet to access AI-generated markets, automated strategies, 
+            Connect your MetaMask wallet to access AI-generated markets, automated strategies, 
             and cross-chain betting opportunities.
           </p>
           
@@ -40,16 +44,31 @@ const LandingPage: React.FC = () => {
               <span>Smart Strategies</span>
             </div>
             <div className="feature-item">
-              <span className="feature-icon">📱</span>
-              <span>Telegram Integration</span>
+              <span className="feature-icon">🦊</span>
+              <span>MetaMask Integration</span>
             </div>
           </div>
           
           <div className="hero-cta">
             <WalletConnectButton size="large" />
-            <p className="cta-note">
-              Connect with MetaMask, WalletConnect, or other Web3 wallets
-            </p>
+            {!isMetaMaskInstalled() && (
+              <div className="metamask-required">
+                <p className="cta-note">
+                  🦊 MetaMask wallet required to access the platform
+                </p>
+                <button 
+                  className="download-metamask-btn"
+                  onClick={() => window.open('https://metamask.io/download/', '_blank')}
+                >
+                  Download MetaMask
+                </button>
+              </div>
+            )}
+            {isMetaMaskInstalled() && (
+              <p className="cta-note">
+                Click "Connect MetaMask" to get started
+              </p>
+            )}
           </div>
         </div>
         

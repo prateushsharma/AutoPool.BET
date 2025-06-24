@@ -181,7 +181,89 @@
   font-weight: 500;
 }
 
-/* Responsive design */
+/* Add these styles to your existing WalletConnectButton.css */
+
+.wallet-network {
+  font-size: 0.75em;
+  color: var(--text-muted);
+  font-weight: 500;
+  text-align: left;
+}
+
+.metamask-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 133, 51, 0.1);
+  border: 1px solid rgba(255, 133, 51, 0.3);
+  padding: 16px;
+  border-radius: 12px;
+  margin-top: 8px;
+  text-align: center;
+}
+
+.metamask-info p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.install-metamask-btn {
+  background: linear-gradient(135deg, #ff8533, #f76707);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.85rem;
+}
+
+.install-metamask-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 133, 51, 0.3);
+}
+
+.install-btn {
+  background: var(--accent-gold);
+  color: var(--bg-primary);
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-left: 8px;
+  transition: all 0.3s ease;
+}
+
+.install-btn:hover {
+  transform: scale(1.05);
+}
+
+/* Update wallet icon for MetaMask */
+.wallet-connect-btn .wallet-icon {
+  font-size: 1.3em;
+}
+
+/* Connected wallet shows network */
+.wallet-connected .wallet-info {
+  gap: 2px;
+}
+
+.wallet-connected.small .wallet-info {
+  min-width: 130px;
+}
+
+.wallet-connected.medium .wallet-info {
+  min-width: 150px;
+}
+
+.wallet-connected.large .wallet-info {
+  min-width: 170px;
+}
 @media (max-width: 768px) {
   .wallet-connect-btn {
     padding: 10px 20px;
