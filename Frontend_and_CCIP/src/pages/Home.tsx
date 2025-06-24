@@ -1,8 +1,9 @@
-// Place this file as: src/pages/Home.tsx
+// Place this file as: src/pages/Home.tsx (Fixed with better card layout)
 
 import React, { useState, useEffect } from 'react';
 import BetCard from '../components/BetCard';
 import { BetMarket } from '../types/betting';
+import './Home.css';
 
 const Home: React.FC = () => {
   const [markets, setMarkets] = useState<BetMarket[]>([]);
@@ -50,49 +51,31 @@ const Home: React.FC = () => {
         isActive: true,
         aiGenerated: true,
         createdAt: new Date(),
-        endTime: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // 60 days
+        endTime: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000), // 45 days
         options: [
-          { id: '3a', name: 'NVIDIA', odds: 2.0, description: 'AI chip market leader' },
-          { id: '3b', name: 'Apple', odds: 2.5, description: 'Consumer tech dominance' },
-          { id: '3c', name: 'Microsoft', odds: 2.8, description: 'Cloud computing growth' },
-          { id: '3d', name: 'Tesla', odds: 3.5, description: 'EV innovation potential' }
+          { id: '3a', name: 'NVIDIA', odds: 2.8, description: 'AI chip leader' },
+          { id: '3b', name: 'Apple', odds: 2.3, description: 'Strong ecosystem' },
+          { id: '3c', name: 'Microsoft', odds: 2.9, description: 'Azure growth' }
         ]
       },
       {
         id: '4',
-        title: 'NBA Championship Prediction',
-        description: 'Which team will claim the 2025 NBA Championship? Our AI considers team chemistry, player health, and historical performance patterns.',
-        category: 'sports',
-        isActive: true,
-        aiGenerated: true,
-        createdAt: new Date(),
-        endTime: new Date(Date.now() + 120 * 24 * 60 * 60 * 1000), // 120 days
-        options: [
-          { id: '4a', name: 'Boston Celtics', odds: 3.5, description: 'Defending champions' },
-          { id: '4b', name: 'Denver Nuggets', odds: 4.2, description: 'Jokic-led powerhouse' },
-          { id: '4c', name: 'Phoenix Suns', odds: 5.1, description: 'Star-studded roster' },
-          { id: '4d', name: 'Other Team', odds: 2.8, description: 'Surprise contender' }
-        ]
-      },
-      {
-        id: '5',
-        title: 'AI Company IPO Success',
+        title: 'AI Startup IPO Success',
         description: 'Which AI startup will have the most successful IPO in the next 6 months? Based on funding rounds, market readiness, and technology advancement.',
         category: 'crypto',
         isActive: true,
         aiGenerated: true,
         createdAt: new Date(),
-        endTime: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000), // 180 days
+        endTime: new Date(Date.now() + 110 * 24 * 60 * 60 * 1000), // 110 days
         options: [
-          { id: '5a', name: 'Anthropic', odds: 2.2, description: 'AI safety leader' },
-          { id: '5b', name: 'Perplexity', odds: 3.1, description: 'Search innovation' },
-          { id: '5c', name: 'Runway ML', odds: 4.0, description: 'Creative AI tools' },
-          { id: '5d', name: 'Other Startup', odds: 3.8, description: 'Dark horse entry' }
+          { id: '4a', name: 'Anthropic', odds: 2.6, description: 'Constitutional AI leader' },
+          { id: '4b', name: 'Perplexity', odds: 3.5, description: 'Search innovation' },
+          { id: '4c', name: 'Runway ML', odds: 4.0, description: 'Video AI pioneer' }
         ]
       },
       {
-        id: '6',
-        title: 'Climate Summit Outcome',
+        id: '5',
+        title: 'Climate Summit Agreement',
         description: 'What will be the major outcome of the next Climate Summit? AI predicts based on political climate, economic factors, and environmental urgency.',
         category: 'politics',
         isActive: true,
@@ -100,9 +83,24 @@ const Home: React.FC = () => {
         createdAt: new Date(),
         endTime: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000), // 45 days
         options: [
-          { id: '6a', name: 'Binding Emissions Target', odds: 2.8, description: 'Strict global commitments' },
-          { id: '6b', name: 'Voluntary Guidelines', odds: 1.9, description: 'Non-binding agreements' },
-          { id: '6c', name: 'No Major Agreement', odds: 4.2, description: 'Political deadlock' }
+          { id: '5a', name: 'Binding Emissions Target', odds: 2.8, description: 'Strict global commitments' },
+          { id: '5b', name: 'Voluntary Guidelines', odds: 1.9, description: 'Non-binding agreements' },
+          { id: '5c', name: 'No Major Agreement', odds: 4.2, description: 'Political deadlock' }
+        ]
+      },
+      {
+        id: '6',
+        title: 'Netflix vs Disney+ Subscriber War',
+        description: 'Which streaming platform will gain more subscribers in Q4? AI considers content releases, pricing strategies, and market penetration.',
+        category: 'entertainment',
+        isActive: true,
+        aiGenerated: true,
+        createdAt: new Date(),
+        endTime: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // 60 days
+        options: [
+          { id: '6a', name: 'Netflix', odds: 1.8, description: 'Content powerhouse' },
+          { id: '6b', name: 'Disney+', odds: 2.2, description: 'Family-friendly growth' },
+          { id: '6c', name: 'Similar Growth', odds: 3.1, description: 'Neck and neck' }
         ]
       }
     ];
@@ -127,7 +125,7 @@ const Home: React.FC = () => {
     : markets.filter(market => market.category === selectedCategory);
 
   const getMarketStats = () => {
-    const totalVolume = markets.length * 1250; // Mock volume calculation
+    const totalVolume = markets.length * 12500; // Mock volume calculation
     const activeCount = markets.filter(m => m.isActive).length;
     return { totalVolume, activeCount };
   };
@@ -149,13 +147,13 @@ const Home: React.FC = () => {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>⚡ AI BetHub</h1>
-        <p>Next-generation betting powered by artificial intelligence</p>
+        <h1>⚡ PulsePicksAI</h1>
+        <p>Next-generation AI betting powered by advanced strategy analysis</p>
         <div className="header-stats">
           <span>🎯 {stats.activeCount} Live Markets</span>
           <span>🤖 AI-Powered Predictions</span>
           <span>💰 ${stats.totalVolume.toLocaleString()} Volume</span>
-          <span>📱 Telegram Integrated</span>
+          <span>⚡ Avalanche Native</span>
         </div>
       </header>
 
@@ -206,8 +204,8 @@ const Home: React.FC = () => {
       </main>
 
       <footer className="app-footer">
-        <p>🤖 Markets powered by advanced AI analysis • 📱 Seamless Telegram integration</p>
-        <p>🎲 Strategic betting with automated execution • ⚡ Real-time market updates</p>
+        <p>🤖 Markets powered by advanced AI analysis • ⚡ Lightning-fast execution on Avalanche</p>
+        <p>🎲 Strategic betting with AMM liquidity • 📊 Real-time market updates</p>
         <p className="footer-note">All predictions are AI-generated and for entertainment purposes</p>
       </footer>
     </div>

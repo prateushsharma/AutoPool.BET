@@ -1,4 +1,4 @@
-// Place this file as: src/components/DashboardHeader.tsx
+// Place this file as: src/components/DashboardHeader.tsx (Updated for PulsePicksAI)
 
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -13,7 +13,7 @@ interface DashboardHeaderProps {
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({ className = '' }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { wallet } = useWallet();
+  const { wallet, disconnectWallet } = useWallet();
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   const isActivePage = (path: string): boolean => {
@@ -32,9 +32,9 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ className = '' }) => 
 
   const navigationItems = [
     { path: '/', label: 'Markets', icon: '🎯' },
-    { path: '/portfolio', label: 'Portfolio', icon: '📊' },
     { path: '/strategies', label: 'Strategies', icon: '🤖' },
-    { path: '/history', label: 'History', icon: '📈' }
+    { path: '/amm', label: 'AMM Pools', icon: '📊' },
+    { path: '/portfolio', label: 'Portfolio', icon: '💼' }
   ];
 
   return (
@@ -44,8 +44,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ className = '' }) => 
         <div className="header-logo" onClick={handleHomeClick}>
           <div className="logo-icon">⚡</div>
           <div className="brand-info">
-            <h1 className="brand-name">AI BetHub</h1>
-            <span className="brand-tagline">Smart Betting</span>
+            <h1 className="brand-name">PulsePicksAI</h1>
+            <span className="brand-tagline">AI Betting Protocol</span>
           </div>
         </div>
 
@@ -71,22 +71,13 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ className = '' }) => 
               <div className="quick-stats">
                 <div className="stat-item">
                   <span className="stat-label">Balance</span>
-                  <span className="stat-value">{wallet.balance} ETH</span>
+                  <span className="stat-value">{wallet.balance} AVAX</span>
                 </div>
                 <div className="stat-item">
                   <span className="stat-label">Network</span>
-                  <span className="stat-value">{wallet.chainName.split(' ')[0]}</span>
+                  <span className="stat-value">Avalanche</span>
                 </div>
               </div>
-
-              {/* Portfolio Button */}
-              <button 
-                className={`portfolio-btn ${isActivePage('/portfolio') ? 'active' : ''}`}
-                onClick={handlePortfolioClick}
-              >
-                <span className="portfolio-icon">📊</span>
-                <span className="portfolio-text">My Portfolio</span>
-              </button>
 
               {/* User Menu */}
               <div className="user-menu-container">
@@ -95,32 +86,75 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ className = '' }) => 
                   onClick={() => setShowUserMenu(!showUserMenu)}
                 >
                   <div className="user-avatar">
-                    <span className="avatar-icon">👤</span>
+                    {wallet.address ? wallet.address.slice(0, 2).toUpperCase() : 'U'}
                   </div>
-                  <span className="dropdown-arrow">⌄</span>
+                  <span className="dropdown-arrow">▼</span>
                 </button>
 
                 {showUserMenu && (
                   <div className="user-menu-dropdown">
                     <div className="menu-header">
                       <div className="user-info">
-                        <span className="user-address">{wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}</span>
-                        <span className="user-network">{wallet.chainName}</span>
+                        <span className="user-address">
+                          {wallet.address ? `${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}` : 'Unknown'}
+                        </span>
+                        <span className="user-network">Avalanche Network</span>
                       </div>
                     </div>
-                    
+
                     <div className="menu-items">
-                      <button className="menu-item" onClick={handlePortfolioClick}>
+                      <button 
+                        className={`menu-item ${isActivePage('/portfolio') ? 'active' : ''}`}
+                        onClick={handlePortfolioClick}
+                      >
+                        <span className="menu-icon">💼</span>
+                        <span className="menu-text">My Bets</span>
+                      </button>
+                      
+                      <button 
+                        className="menu-item"
+                        onClick={() => {
+                          navigate('/strategies');
+                          setShowUserMenu(false);
+                        }}
+                      >
+                        <span className="menu-icon">🤖</span>
+                        <span className="menu-text">My Strategies</span>
+                      </button>
+                      
+                      <button 
+                        className="menu-item"
+                        onClick={() => {
+                          navigate('/amm');
+                          setShowUserMenu(false);
+                        }}
+                      >
                         <span className="menu-icon">📊</span>
-                        <span>Portfolio</span>
+                        <span className="menu-text">LP Positions</span>
                       </button>
-                      <button className="menu-item" onClick={() => navigate('/settings')}>
+                      
+                      <button 
+                        className="menu-item"
+                        onClick={() => {
+                          navigate('/settings');
+                          setShowUserMenu(false);
+                        }}
+                      >
                         <span className="menu-icon">⚙️</span>
-                        <span>Settings</span>
+                        <span className="menu-text">Settings</span>
                       </button>
-                      <button className="menu-item" onClick={() => navigate('/help')}>
-                        <span className="menu-icon">❓</span>
-                        <span>Help</span>
+                      
+                      <div className="menu-divider"></div>
+                      
+                      <button 
+                        className="menu-item disconnect"
+                        onClick={() => {
+                          disconnectWallet();
+                          setShowUserMenu(false);
+                        }}
+                      >
+                        <span className="menu-icon">🔌</span>
+                        <span className="menu-text">Disconnect</span>
                       </button>
                     </div>
                   </div>
@@ -129,18 +163,14 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ className = '' }) => 
             </>
           )}
 
-          {/* Wallet Connect */}
-          <WalletConnectButton size="medium" />
+          {!wallet?.isConnected && (
+            <WalletConnectButton className="connect-wallet-btn" />
+          )}
         </div>
-
-        {/* Mobile Menu Button */}
-        <button className="mobile-menu-btn">
-          <span className="hamburger-icon">☰</span>
-        </button>
       </div>
 
       {/* Mobile Navigation */}
-      <nav className="header-nav mobile-nav">
+      <nav className="mobile-nav">
         {navigationItems.map(item => (
           <button
             key={item.path}
@@ -152,14 +182,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ className = '' }) => 
           </button>
         ))}
       </nav>
-
-      {/* Close user menu when clicking outside */}
-      {showUserMenu && (
-        <div 
-          className="menu-overlay"
-          onClick={() => setShowUserMenu(false)}
-        />
-      )}
     </header>
   );
 };

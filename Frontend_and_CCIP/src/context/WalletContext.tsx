@@ -86,92 +86,86 @@ function walletReducer(state: WalletState, action: WalletAction): WalletState {
 export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(walletReducer, initialState);
 
-  // Check for MetaMask and existing connection on page load
+  // Simple check for existing connection on page load
   useEffect(() => {
-    checkMetaMaskConnection();
-    setupEventListeners();
+    checkExistingConnection();
   }, []);
 
   const isMetaMaskInstalled = (): boolean => {
     return typeof window.ethereum !== 'undefined' && window.ethereum.isMetaMask === true;
   };
 
-  const checkMetaMaskConnection = async () => {
+  const checkExistingConnection = async () => {
     if (!isMetaMaskInstalled()) {
       return;
     }
 
     try {
-      // Check if already connected
+      // Only check for existing accounts, don't request new ones
       const accounts = await window.ethereum.request({ 
         method: 'eth_accounts' 
       });
       
       if (accounts.length > 0) {
         await getWalletInfo(accounts[0]);
+        setupSimpleEventListeners();
       }
     } catch (error) {
-      console.error('Error checking MetaMask connection:', error);
+      console.error('Error checking existing connection:', error);
     }
   };
 
-  const setupEventListeners = () => {
+  // Simplified event listeners that only set up after successful connection
+  const setupSimpleEventListeners = () => {
     if (!isMetaMaskInstalled()) return;
 
-    // Listen for account changes
-    window.ethereum.on('accountsChanged', handleAccountsChanged);
-    
-    // Listen for chain changes
-    window.ethereum.on('chainChanged', handleChainChanged);
-    
-    // Listen for disconnect
-    window.ethereum.on('disconnect', handleDisconnect);
-
-    // Cleanup function
-    return () => {
-      if (window.ethereum && window.ethereum.removeListener) {
-        window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
-        window.ethereum.removeListener('chainChanged', handleChainChanged);
-        window.ethereum.removeListener('disconnect', handleDisconnect);
+    // Simple account change handler
+    const handleAccountChange = async () => {
+      try {
+        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+        if (accounts.length === 0) {
+          dispatch({ type: 'DISCONNECT' });
+        } else {
+          await getWalletInfo(accounts[0]);
+        }
+      } catch (error) {
+        console.error('Error handling account change:', error);
       }
     };
-  };
 
-  const handleAccountsChanged = (accounts: string[]) => {
-    if (accounts.length === 0) {
-      dispatch({ type: 'DISCONNECT' });
-    } else {
-      getWalletInfo(accounts[0]);
-    }
-  };
-
-  const handleChainChanged = (chainId: string) => {
-    const numChainId = parseInt(chainId, 16);
-    const chainInfo = SUPPORTED_CHAINS[numChainId];
-    
-    if (chainInfo) {
-      dispatch({
-        type: 'UPDATE_CHAIN',
-        payload: {
-          chainId: numChainId,
-          chainName: chainInfo.name
+    // Simple chain change handler
+    const handleChainChange = async () => {
+      try {
+        const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+        const numChainId = parseInt(chainId, 16);
+        const chainInfo = SUPPORTED_CHAINS[numChainId];
+        
+        dispatch({
+          type: 'UPDATE_CHAIN',
+          payload: {
+            chainId: numChainId,
+            chainName: chainInfo?.name || `Chain ${numChainId}`
+          }
+        });
+        
+        // Refresh balance after chain change
+        if (state.wallet?.address) {
+          refreshBalance();
         }
-      });
-      refreshBalance();
-    } else {
-      // Unsupported chain
-      dispatch({
-        type: 'UPDATE_CHAIN',
-        payload: {
-          chainId: numChainId,
-          chainName: 'Unsupported Network'
-        }
-      });
-    }
-  };
+      } catch (error) {
+        console.error('Error handling chain change:', error);
+      }
+    };
 
-  const handleDisconnect = () => {
-    dispatch({ type: 'DISCONNECT' });
+    // Set up listeners without the problematic addListener
+    try {
+      if (window.ethereum && typeof window.ethereum.on === 'function') {
+        window.ethereum.on('accountsChanged', handleAccountChange);
+        window.ethereum.on('chainChanged', handleChainChange);
+      }
+    } catch (error) {
+      console.warn('Could not set up event listeners:', error);
+    }
   };
 
   const getWalletInfo = async (address: string): Promise<void> => {
@@ -214,24 +208,23 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         type: 'CONNECT_ERROR', 
         payload: 'MetaMask not detected. Please install MetaMask browser extension.' 
       });
-      
-      // Open MetaMask download page
-      window.open('https://metamask.io/download/', '_blank');
       return;
     }
 
     dispatch({ type: 'CONNECT_START' });
 
     try {
-      // Request account access
+      // Simple connection request without any event listener setup
       const accounts = await window.ethereum.request({
         method: 'eth_requestAccounts'
       });
 
-      if (accounts.length > 0) {
+      if (accounts && accounts.length > 0) {
         await getWalletInfo(accounts[0]);
+        // Only set up event listeners after successful connection
+        setupSimpleEventListeners();
       } else {
-        dispatch({ type: 'CONNECT_ERROR', payload: 'No accounts found' });
+        dispatch({ type: 'CONNECT_ERROR', payload: 'No accounts returned from MetaMask' });
       }
     } catch (error: any) {
       console.error('MetaMask connection error:', error);
@@ -239,11 +232,13 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       let errorMessage = 'Failed to connect to MetaMask';
       
       if (error.code === 4001) {
-        errorMessage = 'Connection rejected. Please try again and approve the connection.';
+        errorMessage = 'Connection rejected. Please approve the connection in MetaMask.';
       } else if (error.code === -32002) {
-        errorMessage = 'Connection request already pending. Please check MetaMask.';
+        errorMessage = 'Connection request pending. Please check MetaMask.';
       } else if (error.code === -32603) {
-        errorMessage = 'Internal error. Please try restarting MetaMask.';
+        errorMessage = 'Internal error. Try refreshing the page.';
+      } else if (error.message && error.message.includes('User rejected')) {
+        errorMessage = 'Connection was cancelled. Please try again.';
       }
       
       dispatch({ type: 'CONNECT_ERROR', payload: errorMessage });
@@ -265,16 +260,13 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
 
     try {
-      // Try to switch to the chain
       await window.ethereum.request({
         method: 'wallet_switchEthereumChain',
         params: [{ chainId: `0x${chainId.toString(16)}` }]
       });
     } catch (error: any) {
-      // Chain not added to MetaMask
       if (error.code === 4902) {
         try {
-          // Add the chain to MetaMask
           await window.ethereum.request({
             method: 'wallet_addEthereumChain',
             params: [{
@@ -293,7 +285,7 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           throw new Error('Failed to add network to MetaMask');
         }
       } else {
-        throw new Error('Failed to switch network');
+        throw new Error(`Failed to switch network: ${error.message}`);
       }
     }
   };

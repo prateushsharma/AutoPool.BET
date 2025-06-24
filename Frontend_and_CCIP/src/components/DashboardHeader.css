@@ -1,7 +1,7 @@
-/* Place this file as: src/components/DashboardHeader.css */
+/* Place this file as: src/components/DashboardHeader.css (Updated to match Suthetic style) */
 
 .dashboard-header {
-  background: var(--bg-glass);
+  background: rgba(10, 10, 10, 0.95);
   backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border-light);
   position: sticky;
@@ -11,7 +11,7 @@
 }
 
 .header-container {
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
   display: flex;
   align-items: center;
@@ -36,7 +36,7 @@
 .logo-icon {
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, var(--accent-gold), var(--accent-blue));
+  background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -54,7 +54,7 @@
 .brand-name {
   font-size: 1.5rem;
   font-weight: 800;
-  background: linear-gradient(135deg, var(--accent-gold), var(--accent-blue));
+  background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -87,7 +87,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background: var(--bg-glass);
+  background: rgba(10, 10, 10, 0.95);
   backdrop-filter: blur(20px);
   border-top: 1px solid var(--border-light);
   padding: 12px;
@@ -118,7 +118,7 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.1), transparent);
+  background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.1), transparent);
   transition: left 0.6s ease;
 }
 
@@ -134,9 +134,9 @@
 }
 
 .nav-item.active {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(0, 212, 255, 0.1));
-  border-color: var(--accent-gold);
-  color: var(--accent-gold);
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(59, 130, 246, 0.1));
+  border-color: var(--accent-purple);
+  color: var(--accent-purple);
   box-shadow: var(--shadow-glow);
 }
 
@@ -163,6 +163,7 @@
   background: var(--bg-glass);
   border: 1px solid var(--border-light);
   border-radius: 12px;
+  backdrop-filter: blur(10px);
 }
 
 .stat-item {
@@ -182,62 +183,27 @@
 
 .stat-value {
   font-size: 0.85rem;
-  color: var(--accent-gold);
+  color: var(--accent-purple);
   font-weight: 700;
   font-family: 'Courier New', monospace;
 }
 
-/* Portfolio Button */
-.portfolio-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--bg-glass);
-  border: 2px solid var(--border-light);
+/* Connect Wallet Button */
+.connect-wallet-btn {
+  background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
   color: var(--text-primary);
-  padding: 10px 16px;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
   font-weight: 600;
-  position: relative;
-  overflow: hidden;
-}
-
-.portfolio-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.1), transparent);
-  transition: left 0.6s ease;
-}
-
-.portfolio-btn:hover {
-  border-color: var(--accent-gold);
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: var(--shadow-glow);
-}
-
-.portfolio-btn:hover::before {
-  left: 100%;
-}
-
-.portfolio-btn.active {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(0, 212, 255, 0.1));
-  border-color: var(--accent-gold);
-  color: var(--accent-gold);
-  box-shadow: var(--shadow-glow);
-}
-
-.portfolio-icon {
-  font-size: 1.2rem;
-}
-
-.portfolio-text {
+  cursor: pointer;
+  transition: var(--transition);
   font-size: 0.9rem;
+}
+
+.connect-wallet-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(139, 92, 246, 0.3);
 }
 
 /* User Menu */
@@ -248,7 +214,7 @@
 .user-menu-trigger {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   background: var(--bg-glass);
   border: 2px solid var(--border-light);
   color: var(--text-primary);
@@ -256,23 +222,25 @@
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
 }
 
 .user-menu-trigger:hover {
-  border-color: var(--accent-gold);
+  border-color: var(--accent-purple);
   box-shadow: var(--shadow-glow);
 }
 
 .user-avatar {
   width: 32px;
   height: 32px;
-  background: linear-gradient(135deg, var(--accent-gold), var(--accent-blue));
+  background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
-  color: var(--bg-primary);
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  font-weight: 700;
 }
 
 .dropdown-arrow {
@@ -326,7 +294,7 @@
 .user-address {
   font-family: 'Courier New', monospace;
   font-weight: 600;
-  color: var(--accent-gold);
+  color: var(--accent-purple);
   font-size: 0.9rem;
 }
 
@@ -346,19 +314,31 @@
   width: 100%;
   background: transparent;
   border: none;
-  color: var(--text-primary);
+  color: var(--text-secondary);
   padding: 12px 16px;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
   font-weight: 500;
-  text-align: left;
 }
 
 .menu-item:hover {
   background: var(--bg-glass);
-  color: var(--accent-gold);
-  transform: translateX(4px);
+  color: var(--text-primary);
+}
+
+.menu-item.active {
+  background: rgba(139, 92, 246, 0.1);
+  color: var(--accent-purple);
+}
+
+.menu-item.disconnect {
+  color: #ef4444;
+}
+
+.menu-item.disconnect:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
 }
 
 .menu-icon {
@@ -367,33 +347,14 @@
   text-align: center;
 }
 
-.menu-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 999;
+.menu-text {
+  font-size: 0.9rem;
 }
 
-/* Mobile Menu Button */
-.mobile-menu-btn {
-  display: none;
-  background: var(--bg-glass);
-  border: 2px solid var(--border-light);
-  color: var(--text-primary);
-  padding: 8px 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.mobile-menu-btn:hover {
-  border-color: var(--accent-gold);
-}
-
-.hamburger-icon {
-  font-size: 1.2rem;
+.menu-divider {
+  height: 1px;
+  background: var(--border-light);
+  margin: 8px 0;
 }
 
 /* Responsive Design */
@@ -401,14 +362,13 @@
   .quick-stats {
     display: none;
   }
-  
-  .header-container {
-    padding: 12px 20px;
-    gap: 16px;
-  }
 }
 
 @media (max-width: 768px) {
+  .header-container {
+    padding: 12px 16px;
+  }
+  
   .desktop-nav {
     display: none;
   }
@@ -417,56 +377,18 @@
     display: flex;
   }
   
-  .portfolio-btn .portfolio-text {
-    display: none;
-  }
-  
-  .user-menu-dropdown {
-    right: -20px;
-    left: 20px;
-    min-width: auto;
-  }
-  
-  .mobile-menu-btn {
-    display: block;
+  .brand-name {
+    font-size: 1.3rem;
   }
   
   .brand-tagline {
-    display: none;
-  }
-  
-  .header-container {
-    padding: 12px 16px;
-  }
-}
-
-@media (max-width: 480px) {
-  .header-logo .brand-name {
-    font-size: 1.2rem;
+    font-size: 0.7rem;
   }
   
   .logo-icon {
     width: 40px;
     height: 40px;
-    font-size: 1.2rem;
-  }
-  
-  .portfolio-btn {
-    padding: 8px 12px;
-  }
-  
-  .user-menu-trigger {
-    padding: 6px 10px;
-  }
-  
-  .user-avatar {
-    width: 28px;
-    height: 28px;
-    font-size: 0.9rem;
-  }
-  
-  .mobile-nav {
-    padding: 8px;
+    font-size: 1.3rem;
   }
   
   .mobile-nav .nav-item {
@@ -475,11 +397,26 @@
     padding: 8px 12px;
   }
   
-  .mobile-nav .nav-label {
-    font-size: 0.75rem;
+  .mobile-nav .nav-icon {
+    font-size: 1.4rem;
   }
   
-  .mobile-nav .nav-icon {
-    font-size: 1.1rem;
+  .mobile-nav .nav-label {
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-container {
+    gap: 12px;
+  }
+  
+  .brand-info {
+    display: none;
+  }
+  
+  .user-menu-dropdown {
+    min-width: 200px;
+    right: -20px;
   }
 }
