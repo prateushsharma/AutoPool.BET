@@ -6,6 +6,13 @@ export interface WalletInfo {
   chainId: number;
   chainName: string;
   isConnected: boolean;
+  // New properties for enhanced portfolio functionality
+  walletType?: string;  // 'core', 'metamask', 'coinbase', etc.
+  walletIcon?: string;  // Icon for the wallet
+  chainIcon?: string;   // Icon for the current chain
+  nativeCurrency?: string;  // Native currency symbol (ETH, AVAX, etc.)
+  canSwitchChains?: boolean;  // Whether wallet can switch chains
+  supportedChains?: number[]; // Array of supported chain IDs
 }
 
 export interface WalletState {
@@ -32,16 +39,25 @@ export const SUPPORTED_CHAINS: Record<number, SupportedChain> = {
     decimals: 18,
     rpcUrl: 'https://eth-mainnet.g.alchemy.com/v2/your-api-key',
     blockExplorer: 'https://etherscan.io',
-    icon: '🔷'
+    icon: '⟠'
   },
-  137: {
-    chainId: 137,
-    name: 'Polygon Mainnet',
-    symbol: 'MATIC',
+  43114: {
+    chainId: 43114,
+    name: 'Avalanche',
+    symbol: 'AVAX',
     decimals: 18,
-    rpcUrl: 'https://polygon-mainnet.g.alchemy.com/v2/your-api-key',
-    blockExplorer: 'https://polygonscan.com',
+    rpcUrl: 'https://api.avax.network/ext/bc/C/rpc',
+    blockExplorer: 'https://snowtrace.io',
     icon: '🔺'
+  },
+  8453: {
+    chainId: 8453,
+    name: 'Base',
+    symbol: 'ETH',
+    decimals: 18,
+    rpcUrl: 'https://mainnet.base.org',
+    blockExplorer: 'https://basescan.org',
+    icon: '🔵'
   },
   42161: {
     chainId: 42161,
@@ -50,7 +66,25 @@ export const SUPPORTED_CHAINS: Record<number, SupportedChain> = {
     decimals: 18,
     rpcUrl: 'https://arb-mainnet.g.alchemy.com/v2/your-api-key',
     blockExplorer: 'https://arbiscan.io',
-    icon: '🔵'
+    icon: '🔴'
+  },
+  137: {
+    chainId: 137,
+    name: 'Polygon Mainnet',
+    symbol: 'MATIC',
+    decimals: 18,
+    rpcUrl: 'https://polygon-mainnet.g.alchemy.com/v2/your-api-key',
+    blockExplorer: 'https://polygonscan.com',
+    icon: '🟣'
+  },
+  10: {
+    chainId: 10,
+    name: 'Optimism',
+    symbol: 'ETH',
+    decimals: 18,
+    rpcUrl: 'https://mainnet.optimism.io',
+    blockExplorer: 'https://optimistic.etherscan.io',
+    icon: '🔴'
   },
   11155111: {
     chainId: 11155111,
@@ -59,7 +93,7 @@ export const SUPPORTED_CHAINS: Record<number, SupportedChain> = {
     decimals: 18,
     rpcUrl: 'https://eth-sepolia.g.alchemy.com/v2/your-api-key',
     blockExplorer: 'https://sepolia.etherscan.io',
-    icon: '🔷'
+    icon: '⟠'
   },
   80001: {
     chainId: 80001,
@@ -68,6 +102,6 @@ export const SUPPORTED_CHAINS: Record<number, SupportedChain> = {
     decimals: 18,
     rpcUrl: 'https://polygon-mumbai.g.alchemy.com/v2/your-api-key',
     blockExplorer: 'https://mumbai.polygonscan.com',
-    icon: '🔺'
+    icon: '🟣'
   }
 };
