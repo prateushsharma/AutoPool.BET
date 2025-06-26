@@ -1,8 +1,11 @@
 // Place this file as: src/pages/Portfolio.tsx
+// Your existing portfolio with contract integration added
 
 import React, { useState, useEffect } from 'react';
 import { useWallet } from '../context/WalletContext';
+import { useContracts, QuickUpdate } from '../hooks/useContracts';
 import './Portfolio.css';
+
 interface TokenBalance {
   symbol: string;
   balance: string;
@@ -34,6 +37,11 @@ const Portfolio: React.FC = () => {
   const [winStats, setWinStats] = useState<WinStats | null>(null);
   const [usdcToBetAmount, setUsdcToBetAmount] = useState('');
   const [isConverting, setIsConverting] = useState(false);
+
+  // Contract integration
+  const { balances: contractBalances, exchangeData, loading: contractLoading, exchangeETH, depositCrossChain, refreshData } = useContracts(wallet?.address);
+  const [ethAmount, setEthAmount] = useState('');
+  const [exchangeLoading, setExchangeLoading] = useState(false);
 
   // Supported chains with their info
   const supportedChains: ChainInfo[] = [
@@ -74,42 +82,46 @@ const Portfolio: React.FC = () => {
     }
   ];
 
-  // Mock token balances - replace with real API calls later
-  const mockTokenBalances: TokenBalance[] = [
-    {
-      symbol: 'USDC',
-      balance: '1,250.50',
-      usdValue: '1,250.50',
-      icon: '💵'
-    },
-    {
-      symbol: 'BET',
-      balance: '5,000.00',
-      usdValue: '2,500.00',
-      icon: '🎯'
-    },
-    {
-      symbol: 'AVAX',
-      balance: '15.75',
-      usdValue: '472.50',
-      icon: '🔺'
-    },
-    {
-      symbol: 'WETH',
-      balance: '0.85',
-      usdValue: '2,040.00',
-      icon: '⟠'
-    }
-  ];
+  // No hardcoded values - will show real data only
 
-  // Mock win stats - replace with real data later
-  const mockWinStats: WinStats = {
-    totalBets: 47,
-    winningBets: 29,
-    totalWinnings: '3,450.75',
-    totalLosses: '1,890.25',
-    winRate: 61.7,
-    roi: 82.6
+  // Handle ETH exchange
+  const handleETHExchange = async () => {
+    if (!ethAmount) return;
+    
+    setExchangeLoading(true);
+    try {
+      const tx = await exchangeETH(ethAmount);
+      console.log('Exchange transaction:', tx.hash);
+      await tx.wait();
+      await refreshData();
+      setEthAmount('');
+      alert('Exchange successful!');
+    } catch (error: any) {
+      console.error('Exchange failed:', error);
+      alert(`Exchange failed: ${error.message}`);
+    } finally {
+      setExchangeLoading(false);
+    }
+  };
+
+  // Handle cross-chain deposit
+  const handleCrossChainDeposit = async () => {
+    if (!ethAmount) return;
+    
+    setExchangeLoading(true);
+    try {
+      const tx = await depositCrossChain(ethAmount);
+      console.log('Cross-chain deposit transaction:', tx.hash);
+      await tx.wait();
+      await refreshData();
+      setEthAmount('');
+      alert('Cross-chain deposit successful!');
+    } catch (error: any) {
+      console.error('Cross-chain deposit failed:', error);
+      alert(`Cross-chain deposit failed: ${error.message}`);
+    } finally {
+      setExchangeLoading(false);
+    }
   };
 
   // Detect current chain based on wallet
@@ -123,10 +135,9 @@ const Portfolio: React.FC = () => {
     }
   }, [wallet?.chainId]);
 
-  // Load mock data
+  // Load only real contract data
   useEffect(() => {
-    setTokenBalances(mockTokenBalances);
-    setWinStats(mockWinStats);
+    // No mock data loading - everything comes from contracts now
   }, []);
 
   // Handle chain switching
@@ -183,8 +194,11 @@ const Portfolio: React.FC = () => {
   };
 
   const calculateTotalPortfolioValue = () => {
-    return tokenBalances.reduce((total, token) => {
-      return total + parseFloat(token.usdValue.replace(',', ''));
+    // Calculate from real contract balances only
+    if (contractBalances.length === 0) return '0';
+    
+    return contractBalances.reduce((total, token) => {
+      return total + parseFloat(token.usdValue);
     }, 0).toLocaleString();
   };
 
@@ -228,205 +242,128 @@ const Portfolio: React.FC = () => {
           )}
         </div>
 
-        {/* Portfolio Overview */}
-        <div className="portfolio-overview">
-          <div className="overview-card total">
-            <div className="card-icon">💰</div>
-            <div className="card-content">
-              <h3>Total Portfolio Value</h3>
-              <div className="card-value">${calculateTotalPortfolioValue()}</div>
-              <div className="card-subtext">Across all tokens</div>
+        {/* Contract Integration Section */}
+        <div className="contract-section">
+          <h3>🔗 Contract Balances</h3>
+          {contractLoading ? (
+            <div className="loading-indicator">
+              <span>Loading contract data...</span>
             </div>
-          </div>
-
-          <div className="overview-card">
-            <div className="card-icon">🎯</div>
-            <div className="card-content">
-              <h3>Active Bets</h3>
-              <div className="card-value">3</div>
-              <div className="card-subtext">Currently running</div>
-            </div>
-          </div>
-
-          <div className="overview-card">
-            <div className="card-icon">📈</div>
-            <div className="card-content">
-              <h3>Total Profit</h3>
-              <div className="card-value positive">+${winStats?.totalWinnings || '0'}</div>
-              <div className="card-subtext">All time performance</div>
-            </div>
-          </div>
-
-          <div className="overview-card">
-            <div className="card-icon">🏆</div>
-            <div className="card-content">
-              <h3>Win Rate</h3>
-              <div className="card-value">{winStats?.winRate || 0}%</div>
-              <div className="card-subtext">{winStats?.winningBets || 0}/{winStats?.totalBets || 0} bets</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Token Balances */}
-        <div className="token-balances">
-          <h3>Token Balances</h3>
-          <div className="balance-list">
-            {tokenBalances.map((token, index) => (
-              <div key={index} className="balance-item">
-                <div className="token-info">
-                  <span className="token-icon">{token.icon}</span>
-                  <div className="token-details">
-                    <span className="token-symbol">{token.symbol}</span>
-                    <span className="token-balance">{token.balance}</span>
+          ) : contractBalances.length > 0 ? (
+            <div className="contract-balances">
+              {contractBalances.map((balance, index) => (
+                <div key={index} className="contract-balance-item">
+                  <div className="balance-info">
+                    <span className="balance-symbol">{balance.symbol}</span>
+                    <span className="balance-amount">{balance.balance}</span>
+                  </div>
+                  <div className="balance-value">
+                    <span>${balance.usdValue}</span>
+                    <span className="chain-name">({balance.chainName})</span>
                   </div>
                 </div>
-                <div className="token-value">
-                  <span className="usd-value">${token.usdValue}</span>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : wallet?.isConnected ? (
+            <div className="no-contract-balances">
+              <p>No contract balances found. Connect to Sepolia or Arbitrum Sepolia to see your BETmain tokens.</p>
+            </div>
+          ) : (
+            <div className="connect-wallet-prompt">
+              <p>Connect your wallet to view contract balances</p>
+            </div>
+          )}
         </div>
 
-        {/* USDC to BET Conversion */}
-        <div className="conversion-section">
-          <h3>Convert USDC to BET Tokens</h3>
-          <div className="conversion-card">
-            <div className="conversion-header">
-              <div className="conversion-rate">
-                <span className="rate-info">Exchange Rate: 1 USDC = 2 BET</span>
-              </div>
-            </div>
-            
-            <div className="conversion-form">
-              <div className="input-group">
-                <label>Amount (USDC)</label>
-                <div className="input-wrapper">
-                  <input
-                    type="number"
-                    placeholder="0.00"
-                    value={usdcToBetAmount}
-                    onChange={(e) => setUsdcToBetAmount(e.target.value)}
-                    min="0"
-                    step="0.01"
-                  />
-                  <span className="input-currency">USDC</span>
+        {/* ETH Exchange Section */}
+        {wallet?.isConnected && (
+          <div className="eth-exchange-section">
+            <h3>💱 ETH to BETmain Exchange</h3>
+            {exchangeData && (
+              <div className="exchange-info">
+                <p>Exchange Rate: 1 ETH = {exchangeData.rate.toLocaleString()} BETmain</p>
+                <div className="user-exchange-stats">
+                  <span>Your deposited: {exchangeData.userDeposited} ETH</span>
+                  <span>Your received: {exchangeData.userReceived} BETmain</span>
                 </div>
               </div>
+            )}
+            
+            <div className="exchange-form">
+              <div className="exchange-input">
+                <input
+                  type="number"
+                  placeholder="0.0"
+                  value={ethAmount}
+                  onChange={(e) => setEthAmount(e.target.value)}
+                  step="0.001"
+                  min="0"
+                />
+                <span className="input-label">ETH</span>
+              </div>
               
-              <div className="conversion-arrow">↓</div>
+              <div className="exchange-buttons">
+                <button 
+                  onClick={handleETHExchange} 
+                  disabled={!ethAmount || exchangeLoading}
+                  className="exchange-btn direct"
+                >
+                  {exchangeLoading ? 'Processing...' : 'Exchange on Sepolia'}
+                </button>
+                
+                <button 
+                  onClick={handleCrossChainDeposit} 
+                  disabled={!ethAmount || exchangeLoading}
+                  className="exchange-btn cross-chain"
+                >
+                  {exchangeLoading ? 'Processing...' : 'Cross-Chain (Arbitrum)'}
+                </button>
+              </div>
               
-              <div className="output-group">
-                <label>You'll receive</label>
-                <div className="output-value">
-                  {usdcToBetAmount ? (parseFloat(usdcToBetAmount) * 2).toFixed(2) : '0.00'} BET
+              {ethAmount && exchangeData && (
+                <div className="exchange-preview">
+                  <span>You will receive: ~{(parseFloat(ethAmount) * exchangeData.rate).toLocaleString()} BETmain</span>
                 </div>
-              </div>
-              
-              <button 
-                className="convert-btn"
-                onClick={handleConvertToBet}
-                disabled={!usdcToBetAmount || parseFloat(usdcToBetAmount) <= 0 || isConverting}
-              >
-                {isConverting ? 'Converting...' : 'Convert to BET'}
-              </button>
+              )}
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Win Statistics */}
-        <div className="win-statistics">
-          <h3>Betting Performance</h3>
-          <div className="stats-grid">
-            <div className="stat-card">
-              <div className="stat-icon">🎯</div>
-              <div className="stat-content">
-                <span className="stat-value">{winStats?.totalBets || 0}</span>
-                <span className="stat-label">Total Bets</span>
-              </div>
+        {/* USDC to BET Converter */}
+        <div className="usdc-converter">
+          <h3>USDC to BET Converter</h3>
+          <div className="converter-form">
+            <div className="converter-input">
+              <input
+                type="number"
+                placeholder="Enter USDC amount"
+                value={usdcToBetAmount}
+                onChange={(e) => setUsdcToBetAmount(e.target.value)}
+                disabled={isConverting}
+              />
+              <span className="input-currency">USDC</span>
             </div>
             
-            <div className="stat-card">
-              <div className="stat-icon">🏆</div>
-              <div className="stat-content">
-                <span className="stat-value">{winStats?.winningBets || 0}</span>
-                <span className="stat-label">Winning Bets</span>
-              </div>
+            <div className="conversion-arrow">→</div>
+            
+            <div className="conversion-output">
+              <span className="output-amount">
+                {usdcToBetAmount ? (parseFloat(usdcToBetAmount) * 2).toFixed(2) : '0.00'}
+              </span>
+              <span className="output-currency">BET</span>
             </div>
             
-            <div className="stat-card">
-              <div className="stat-icon">💰</div>
-              <div className="stat-content">
-                <span className="stat-value positive">${winStats?.totalWinnings || '0'}</span>
-                <span className="stat-label">Total Winnings</span>
-              </div>
-            </div>
-            
-            <div className="stat-card">
-              <div className="stat-icon">📉</div>
-              <div className="stat-content">
-                <span className="stat-value negative">-${winStats?.totalLosses || '0'}</span>
-                <span className="stat-label">Total Losses</span>
-              </div>
-            </div>
-            
-            <div className="stat-card">
-              <div className="stat-icon">📊</div>
-              <div className="stat-content">
-                <span className="stat-value">{winStats?.winRate || 0}%</span>
-                <span className="stat-label">Win Rate</span>
-              </div>
-            </div>
-            
-            <div className="stat-card">
-              <div className="stat-icon">📈</div>
-              <div className="stat-content">
-                <span className="stat-value positive">+{winStats?.roi || 0}%</span>
-                <span className="stat-label">ROI</span>
-              </div>
-            </div>
+            <button 
+              className="convert-button"
+              onClick={handleConvertToBet}
+              disabled={!usdcToBetAmount || parseFloat(usdcToBetAmount) <= 0 || isConverting}
+            >
+              {isConverting ? 'Converting...' : 'Convert to BET'}
+            </button>
           </div>
-        </div>
-
-        {/* Recent Activity */}
-        <div className="recent-activity">
-          <h3>Recent Activity</h3>
-          <div className="activity-list">
-            <div className="activity-item">
-              <div className="activity-icon win">🏆</div>
-              <div className="activity-content">
-                <span className="activity-title">Won bet on NBA Lakers vs Warriors</span>
-                <span className="activity-time">2 hours ago</span>
-              </div>
-              <div className="activity-amount positive">+$125.50</div>
-            </div>
-            
-            <div className="activity-item">
-              <div className="activity-icon convert">🔄</div>
-              <div className="activity-content">
-                <span className="activity-title">Converted 100 USDC to 200 BET</span>
-                <span className="activity-time">1 day ago</span>
-              </div>
-              <div className="activity-amount">200 BET</div>
-            </div>
-            
-            <div className="activity-item">
-              <div className="activity-icon loss">❌</div>
-              <div className="activity-content">
-                <span className="activity-title">Lost bet on Premier League Chelsea vs Arsenal</span>
-                <span className="activity-time">2 days ago</span>
-              </div>
-              <div className="activity-amount negative">-$50.00</div>
-            </div>
-            
-            <div className="activity-item">
-              <div className="activity-icon win">🏆</div>
-              <div className="activity-content">
-                <span className="activity-title">Won AI strategy bet on NFL</span>
-                <span className="activity-time">3 days ago</span>
-              </div>
-              <div className="activity-amount positive">+$200.75</div>
-            </div>
+          
+          <div className="conversion-rate">
+            <span>Exchange Rate: 1 USDC = 2 BET</span>
           </div>
         </div>
       </div>
