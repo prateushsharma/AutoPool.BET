@@ -6,8 +6,19 @@ import json
 import time
 from data_fetch.get_boosted_tokens import get_tokens
 from betting_pool.query_classifier import classify_token_query
+from fastapi.middleware.cors import CORSMiddleware
+
 
 app = FastAPI()
+
+# Allow all origins (not recommended in production without restrictions)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all headers
+)
 
 class QueryRequest(BaseModel):
     query: str
