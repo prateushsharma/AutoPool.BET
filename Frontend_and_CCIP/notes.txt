@@ -28,3 +28,6 @@ AvalancheCCIPBridge contract address (Deployed on Avalanche FUJI testnet):0xf416
 CCIP Gateway contract address (deployed on sepolia):0x26cF4022AC4e15405CFBfd45566F0DEdC80d74d4
 
 CompetitionFactory contract addaress (deployed on Avalanche FUJI testnet): 0x53BA3e2AED1f8a5C3fe7B3026C07B83AD24c31f5
+Enhanced Competitomn Factory Contract Addres (Deployed on Avalanche FUJI testnet): 0xC0e168bb618e876342fe8F3836cae1f6394b7b05
+SepoliaParticipation contract address (deployed on Sepolia):0x0c52d6EbEb3d815fcF3eccf09522028ed787f74a
+

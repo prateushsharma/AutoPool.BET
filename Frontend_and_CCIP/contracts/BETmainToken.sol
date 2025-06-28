@@ -1,202 +1,226 @@
-// SPDX-License-Identifier: MIT
+// File: contracts/tokens/BETmainToken.sol
+// Deploy on: Avalanche Fuji via Remix
+// NEW VERSION: Compatible with EnhancedCompetitionFactory
 
-pragma solidity ^0.8.19;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.24;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-/**
- * @title BETmainToken
- * @dev Universal base token for PulsePicksAI protocol
- * @notice This token is backed 1:1 with deposited USDC across all chains
- * Features:
- * - Dynamic supply based on cross-chain deposits
- * - ICTT compatibility for Avalanche native chains
- * - CCIP integration for external chains
- * - Pausable for emergency situations
- */
-contract BETmainToken is ERC20, ReentrancyGuard, Ownable, Pausable {
+contract BETmainToken is ERC20, Ownable, ReentrancyGuard {
     
-    // Cross-chain deposit tracking
-    mapping(bytes32 => uint256) public chainDeposits;
-    mapping(bytes32 => bool) public supportedChains;
+    // ============ CHAIN CONSTANTS (MATCH FACTORY) ============
+    bytes32 private constant SEPOLIA_CHAIN_ID = bytes32(uint256(0x5345504f4c4941000000000000000000000000000000000000000000000000));
+    bytes32 private constant DISPATCH_CHAIN_ID = bytes32(uint256(0x4449535041544348000000000000000000000000000000000000000000000000));
+    bytes32 private constant ARBITRUM_CHAIN_ID = bytes32(uint256(0x4152424954525553000000000000000000000000000000000000000000000000));
+    bytes32 private constant POLYGON_CHAIN_ID = bytes32(uint256(0x504f4c59474f4e00000000000000000000000000000000000000000000000000));
+    bytes32 private constant BASE_CHAIN_ID = bytes32(uint256(0x4241534500000000000000000000000000000000000000000000000000000000));
+    bytes32 private constant OPTIMISM_CHAIN_ID = bytes32(uint256(0x4f5054494d49534d000000000000000000000000000000000000000000000000));
+    bytes32 private constant ETHEREUM_CHAIN_ID = bytes32(uint256(0x455448455245554d000000000000000000000000000000000000000000000000));
+    bytes32 private constant AVALANCHE_CHAIN_ID = bytes32(uint256(0x4156414c414e434845000000000000000000000000000000000000000000000));
+    bytes32 private constant BSC_CHAIN_ID = bytes32(uint256(0x4253430000000000000000000000000000000000000000000000000000000000));
+    bytes32 private constant FANTOM_CHAIN_ID = bytes32(uint256(0x46414e544f4d000000000000000000000000000000000000000000000000000));
     
-    // Protocol addresses
+    // Authorization and limits
     mapping(address => bool) public authorizedMinters;
     mapping(address => bool) public authorizedBurners;
+    mapping(bytes32 => uint256) public chainDeposits; // Track deposits per chain
     
-    // Supply tracking
-    uint256 public totalBackedSupply;
-    uint256 public maxSupply = 1000000000 * 10**18; // 1B max supply
-    
-    // Chain identifiers
-    bytes32 public constant FUJI_C_CHAIN = keccak256("AVALANCHE_FUJI_C");
-    bytes32 public constant DISPATCH_CHAIN = keccak256("DISPATCH");
-    bytes32 public constant SEPOLIA_CHAIN = keccak256("ETHEREUM_SEPOLIA");
+    // Token limits
+    uint256 public constant MAX_SUPPLY = 1_000_000_000 * 10**18; // 1B tokens
+    uint256 public totalBacked; // Total tokens backed by cross-chain deposits
     
     // Events
-    event CrossChainDeposit(bytes32 indexed chain, uint256 amount, address indexed user);
-    event CrossChainWithdrawal(bytes32 indexed chain, uint256 amount, address indexed user);
-    event ChainSupported(bytes32 indexed chain, bool supported);
-    event AuthorizedMinter(address indexed minter, bool authorized);
-    event AuthorizedBurner(address indexed burner, bool authorized);
+    event MintedFromDeposit(bytes32 indexed chain, uint256 amount, address indexed recipient);
+    event BurnedForWithdrawal(bytes32 indexed chain, uint256 amount, address indexed user);
+    event AuthorizedMinterUpdated(address indexed minter, bool authorized);
+    event AuthorizedBurnerUpdated(address indexed burner, bool authorized);
+    event EmergencyMint(address indexed to, uint256 amount, string reason);
     
-    constructor(
-        string memory name,
-        string memory symbol,
-        address initialOwner
-    ) Ownable(msg.sender) ERC20(name, symbol) {
-        _transferOwnership(initialOwner);
+    // Errors
+    error UnauthorizedMinter();
+    error UnauthorizedBurner();
+    error ExceedsMaxSupply();
+    error InsufficientBalance();
+    error InvalidChainId();
+    error ZeroAmount();
+    error ZeroAddress();
+    
+    constructor() ERC20("BETmain", "BET") Ownable(msg.sender) {
+        // Initialize with some tokens for testing
+        _mint(msg.sender, 1_000_000 * 10**18); // 1M tokens for owner
+        totalBacked = 1_000_000 * 10**18;
         
-        // Initialize supported chains
-        supportedChains[FUJI_C_CHAIN] = true;
-        supportedChains[DISPATCH_CHAIN] = true;
-        supportedChains[SEPOLIA_CHAIN] = true;
-        
-        emit ChainSupported(FUJI_C_CHAIN, true);
-        emit ChainSupported(DISPATCH_CHAIN, true);
-        emit ChainSupported(SEPOLIA_CHAIN, true);
-    }
-    
-    modifier onlyAuthorizedMinter() {
-        require(authorizedMinters[msg.sender], "BETmain: Not authorized minter");
-        _;
-    }
-    
-    modifier onlyAuthorizedBurner() {
-        require(authorizedBurners[msg.sender], "BETmain: Not authorized burner");
-        _;
-    }
-    
-    modifier validChain(bytes32 chain) {
-        require(supportedChains[chain], "BETmain: Chain not supported");
-        _;
+        // Set deployer as authorized minter and burner
+        authorizedMinters[msg.sender] = true;
+        authorizedBurners[msg.sender] = true;
     }
     
     /**
-     * @dev Mint tokens from cross-chain deposit
-     * @param chain Chain identifier where deposit originated
-     * @param amount Amount to mint (1:1 with deposited USDC)
-     * @param recipient Address to receive minted tokens
+     * @dev CRITICAL FUNCTION: Mint tokens from cross-chain deposits
+     * This is called by EnhancedCompetitionFactory when users deposit from other chains
      */
     function mintFromDeposit(
-        bytes32 chain,
-        uint256 amount,
+        bytes32 chain, 
+        uint256 amount, 
         address recipient
-    ) external onlyAuthorizedMinter validChain(chain) nonReentrant whenNotPaused {
-        require(recipient != address(0), "BETmain: Zero address");
-        require(amount > 0, "BETmain: Zero amount");
-        require(totalSupply() + amount <= maxSupply, "BETmain: Max supply exceeded");
+    ) external nonReentrant {
+        if (!authorizedMinters[msg.sender]) revert UnauthorizedMinter();
+        if (amount == 0) revert ZeroAmount();
+        if (recipient == address(0)) revert ZeroAddress();
+        if (!_isValidChain(chain)) revert InvalidChainId();
         
+        // Check max supply
+        if (totalSupply() + amount > MAX_SUPPLY) revert ExceedsMaxSupply();
+        
+        // Update chain deposit tracking
         chainDeposits[chain] += amount;
-        totalBackedSupply += amount;
+        totalBacked += amount;
         
+        // Mint tokens
         _mint(recipient, amount);
         
-        emit CrossChainDeposit(chain, amount, recipient);
+        emit MintedFromDeposit(chain, amount, recipient);
     }
     
     /**
-     * @dev Burn tokens for cross-chain withdrawal
-     * @param chain Chain identifier where withdrawal is going
-     * @param amount Amount to burn
-     * @param user Address of user withdrawing
+     * @dev Burn tokens for cross-chain withdrawals
      */
     function burnForWithdrawal(
         bytes32 chain,
         uint256 amount,
         address user
-    ) external onlyAuthorizedBurner validChain(chain) nonReentrant whenNotPaused {
-        require(user != address(0), "BETmain: Zero address");
-        require(amount > 0, "BETmain: Zero amount");
-        require(chainDeposits[chain] >= amount, "BETmain: Insufficient chain deposits");
-        require(balanceOf(user) >= amount, "BETmain: Insufficient balance");
+    ) external nonReentrant {
+        if (!authorizedBurners[msg.sender]) revert UnauthorizedBurner();
+        if (amount == 0) revert ZeroAmount();
+        if (user == address(0)) revert ZeroAddress();
+        if (!_isValidChain(chain)) revert InvalidChainId();
         
-        chainDeposits[chain] -= amount;
-        totalBackedSupply -= amount;
+        // Check user balance
+        if (balanceOf(user) < amount) revert InsufficientBalance();
         
+        // Update tracking
+        if (chainDeposits[chain] >= amount) {
+            chainDeposits[chain] -= amount;
+            totalBacked -= amount;
+        }
+        
+        // Burn tokens
         _burn(user, amount);
         
-        emit CrossChainWithdrawal(chain, amount, user);
+        emit BurnedForWithdrawal(chain, amount, user);
     }
     
     /**
-     * @dev Emergency mint for protocol operations (owner only)
+     * @dev Emergency mint function (owner only)
      */
     function emergencyMint(address to, uint256 amount) external onlyOwner {
-        require(totalSupply() + amount <= maxSupply, "BETmain: Max supply exceeded");
+        if (to == address(0)) revert ZeroAddress();
+        if (amount == 0) revert ZeroAmount();
+        if (totalSupply() + amount > MAX_SUPPLY) revert ExceedsMaxSupply();
+        
+        _mint(to, amount);
+        emit EmergencyMint(to, amount, "Emergency mint by owner");
+    }
+    
+    /**
+     * @dev Standard mint function (for authorized minters)
+     */
+    function mint(address to, uint256 amount) external {
+        if (!authorizedMinters[msg.sender]) revert UnauthorizedMinter();
+        if (to == address(0)) revert ZeroAddress();
+        if (amount == 0) revert ZeroAmount();
+        if (totalSupply() + amount > MAX_SUPPLY) revert ExceedsMaxSupply();
+        
         _mint(to, amount);
     }
     
     /**
-     * @dev Set authorized minter status
+     * @dev Set authorized minter
      */
     function setAuthorizedMinter(address minter, bool authorized) external onlyOwner {
+        if (minter == address(0)) revert ZeroAddress();
         authorizedMinters[minter] = authorized;
-        emit AuthorizedMinter(minter, authorized);
+        emit AuthorizedMinterUpdated(minter, authorized);
     }
     
     /**
-     * @dev Set authorized burner status
+     * @dev Set authorized burner
      */
     function setAuthorizedBurner(address burner, bool authorized) external onlyOwner {
+        if (burner == address(0)) revert ZeroAddress();
         authorizedBurners[burner] = authorized;
-        emit AuthorizedBurner(burner, authorized);
+        emit AuthorizedBurnerUpdated(burner, authorized);
     }
     
     /**
-     * @dev Add or remove supported chain
+     * @dev Check if chain ID is valid
      */
-    function setSupportedChain(bytes32 chain, bool supported) external onlyOwner {
-        supportedChains[chain] = supported;
-        emit ChainSupported(chain, supported);
+    function _isValidChain(bytes32 chainId) private pure returns (bool) {
+        return chainId == SEPOLIA_CHAIN_ID ||
+               chainId == DISPATCH_CHAIN_ID ||
+               chainId == ARBITRUM_CHAIN_ID ||
+               chainId == POLYGON_CHAIN_ID ||
+               chainId == BASE_CHAIN_ID ||
+               chainId == OPTIMISM_CHAIN_ID ||
+               chainId == ETHEREUM_CHAIN_ID ||
+               chainId == AVALANCHE_CHAIN_ID ||
+               chainId == BSC_CHAIN_ID ||
+               chainId == FANTOM_CHAIN_ID;
     }
     
     /**
-     * @dev Update max supply (owner only, can only increase)
+     * @dev Get chain deposit amount
      */
-    function updateMaxSupply(uint256 newMaxSupply) external onlyOwner {
-        require(newMaxSupply >= totalSupply(), "BETmain: Cannot reduce below current supply");
-        maxSupply = newMaxSupply;
+    function getChainDeposits(bytes32 chainId) external view returns (uint256) {
+        return chainDeposits[chainId];
     }
     
     /**
-     * @dev Get deposit amount for specific chain
+     * @dev Get total backed supply
      */
-    function getChainDeposits(bytes32 chain) external view returns (uint256) {
-        return chainDeposits[chain];
+    function getTotalBacked() external view returns (uint256) {
+        return totalBacked;
     }
     
     /**
-     * @dev Check if chain is supported
+     * @dev Check if address is authorized minter
      */
-    function isChainSupported(bytes32 chain) external view returns (bool) {
-        return supportedChains[chain];
+    function isAuthorizedMinter(address account) external view returns (bool) {
+        return authorizedMinters[account];
     }
     
     /**
-     * @dev Get total backing ratio (should always be 1:1)
+     * @dev Check if address is authorized burner
      */
-    function getBackingRatio() external view returns (uint256) {
-        if (totalSupply() == 0) return 1e18; // 100% when no supply
-        return (totalBackedSupply * 1e18) / totalSupply();
+    function isAuthorizedBurner(address account) external view returns (bool) {
+        return authorizedBurners[account];
     }
     
     /**
-     * @dev Pause contract (emergency only)
+     * @dev Get Sepolia chain ID (for verification)
      */
-    function pause() external onlyOwner {
-        _pause();
+    function getSepoliaChainId() external pure returns (bytes32) {
+        return SEPOLIA_CHAIN_ID;
     }
     
     /**
-     * @dev Unpause contract
+     * @dev Get all supported chain IDs
      */
-    function unpause() external onlyOwner {
-        _unpause();
+    function getAllChainIds() external pure returns (bytes32[10] memory) {
+        return [
+            SEPOLIA_CHAIN_ID,
+            DISPATCH_CHAIN_ID,
+            ARBITRUM_CHAIN_ID,
+            POLYGON_CHAIN_ID,
+            BASE_CHAIN_ID,
+            OPTIMISM_CHAIN_ID,
+            ETHEREUM_CHAIN_ID,
+            AVALANCHE_CHAIN_ID,
+            BSC_CHAIN_ID,
+            FANTOM_CHAIN_ID
+        ];
     }
-    
-
 }
