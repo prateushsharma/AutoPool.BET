@@ -22,12 +22,12 @@ SepoliaMintAndBridge address:0x22F6Db6967ac3b17848f0411648c4A47355DB7Cd
 Arbitrum Router:0x2a9C5afB0d0e4BAb2BCdaE109EC4b0c4Be15a165
 ArbitrumDepositAndReceive contract address:0x37Cc04eAb33A9F4cf945B440cAF6E87a79Ca534A
 
-BetmainToken contract address (deployed on Avanalanche FUJI testnet) :0xd4F0c4155a54592655A7728144aC65B64b0686a9
+BetmainToken contract address (deployed on Avanalanche FUJI testnet) :0x027dc7eAaE39Ea643e48523036AFec75eAdE6905
 Contract Address of PrizeOracle.sol (deployed on Avanalanche FUJI testnet) :0x703F8d9f3e31c8D572b3e6497d503cC494E467E5
 AvalancheCCIPBridge contract address (Deployed on Avalanche FUJI testnet):0xf416d0e2670d4016B42188a9070f2d8c9B2A60ad
 CCIP Gateway contract address (deployed on sepolia):0x26cF4022AC4e15405CFBfd45566F0DEdC80d74d4
 
 CompetitionFactory contract addaress (deployed on Avalanche FUJI testnet): 0x53BA3e2AED1f8a5C3fe7B3026C07B83AD24c31f5
-Enhanced Competitomn Factory Contract Addres (Deployed on Avalanche FUJI testnet): 0xC0e168bb618e876342fe8F3836cae1f6394b7b05
+Enhanced Competitomn Factory Contract Addres (Deployed on Avalanche FUJI testnet): 0xD48fAdd18f2536a0193F036d85383DA3f92E8f3D
 SepoliaParticipation contract address (deployed on Sepolia):0x0c52d6EbEb3d815fcF3eccf09522028ed787f74a
 
