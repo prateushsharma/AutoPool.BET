@@ -1,4 +1,5 @@
-python-dotenv
-requests
 fastapi
 uvicorn
+httpx
+groq
+aiosqlite
