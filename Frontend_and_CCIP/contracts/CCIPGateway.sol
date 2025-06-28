@@ -1,6 +1,4 @@
 // SPDX-License-Identifier: MIT
-// FILE PLACEMENT: Deploy this on ETHEREUM SEPOLIA
-// PURPOSE: Real CCIP gateway for cross-chain ETH deposits to Avalanche Fuji
 
 pragma solidity ^0.8.19;
 

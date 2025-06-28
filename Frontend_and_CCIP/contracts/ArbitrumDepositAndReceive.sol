@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
-// File: contracts/ArbitrumDepositAndReceive.sol
-// Deploy on: Arbitrum Sepolia (both sends ETH data and receives BETmain tokens back)
+
 pragma solidity 0.8.24;
 
 import {IRouterClient} from "@chainlink/contracts-ccip/contracts/interfaces/IRouterClient.sol";

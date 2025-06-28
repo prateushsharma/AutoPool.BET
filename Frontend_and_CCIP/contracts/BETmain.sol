@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
-// File: contracts/BETmainToken.sol
-// Deploy on: Ethereum Sepolia FIRST
+
 pragma solidity ^0.8.19;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";

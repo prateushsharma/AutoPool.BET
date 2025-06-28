@@ -1,6 +1,4 @@
 // SPDX-License-Identifier: MIT
-// FILE PLACEMENT: Deploy this on AVALANCHE FUJI
-// PURPOSE: CCIP receiver that mints BETmain tokens when receiving deposits from Sepolia
 
 pragma solidity ^0.8.19;
 

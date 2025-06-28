@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
-// File: contracts/SepoliaMintAndBridge.sol
-// Deploy on: Ethereum Sepolia (mints BETmain and bridges back to Arbitrum)
+
 pragma solidity 0.8.24;
 
 import {IRouterClient} from "@chainlink/contracts-ccip/contracts/interfaces/IRouterClient.sol";

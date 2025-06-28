@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
-// File: contracts/ETHToBETmainExchange.sol
-// Deploy on: Ethereum Sepolia AFTER BETmain token
+
 pragma solidity ^0.8.19;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
