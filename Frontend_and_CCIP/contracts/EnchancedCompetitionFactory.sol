@@ -1,6 +1,3 @@
-// File: contracts/core/EnhancedCompetitionFactory.sol
-// Deploy on: Avalanche Fuji via Remix
-// FIXED: All compilation errors resolved
 
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
