@@ -1,231 +1,226 @@
+
 // SPDX-License-Identifier: MIT
+pragma solidity 0.8.24;
 
-pragma solidity ^0.8.19;
-
-import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
-import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
+import "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
+import "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-/**
- * @title SepoliaParticipation
- * @dev Allows Sepolia users to join Avalanche competitions by depositing ETH
- * @notice User deposits ETH → CCIP message → Avalanche mints BETmain → Auto-joins competition
- */
-contract SepoliaParticipation is ReentrancyGuard, Ownable {
+contract SepoliaParticipation is CCIPReceiver, Ownable, ReentrancyGuard {
     
-    IRouterClient private immutable ccipRouter;
+    // Chain name constant
+    string private constant SOURCE_CHAIN_NAME = "SEPOLIA";
     
-    // Chain selectors
-    uint64 public constant AVALANCHE_FUJI_SELECTOR = 14767482510784806043;
-    
-    // Avalanche competition factory address
+    // CCIP Configuration
+    IRouterClient private immutable i_router;
+    uint64 private constant AVALANCHE_CHAIN_SELECTOR = 14767482510784806043;
     address public avalancheCompetitionFactory;
     
-    // ETH to BETmain conversion rate (1 ETH = 1000 BETmain for demo)
+    // Conversion rate: 1 ETH = 1000 BETmain
     uint256 public constant ETH_TO_BETMAIN_RATE = 1000;
     
-    // Participation tracking
-    mapping(address => mapping(uint256 => uint256)) public userParticipations; // user => competitionId => ethAmount
-    mapping(bytes32 => bool) public processedMessages;
+    // Gas limit for cross-chain execution
+    uint256 public ccipGasLimit = 800000;
     
-    uint256 public constant MIN_ETH_DEPOSIT = 0.01 ether;
-    uint256 public constant MAX_ETH_DEPOSIT = 10 ether;
-    uint256 public ccipGasLimit = 500000; // Gas limit for destination execution
+    // Minimum participation amount
+    uint256 public minimumEthAmount = 0.01 ether;
+    
+    // Statistics tracking
+    uint256 public totalParticipations;
+    uint256 public totalEthSent;
+    mapping(address => uint256) public userParticipations;
+    mapping(bytes32 => address) public messageToUser;
     
     // Events
-    event ParticipationRequested(
-        address indexed user,
+    event CrossChainParticipationSent(
+        address indexed participant,
         uint256 indexed competitionId,
         uint256 ethAmount,
-        uint256 betmainEquivalent,
+        uint256 betmainAmount,
         uint256 confidence,
         bytes32 messageId
     );
     
-    event CCIPFeePaid(uint256 fee, bytes32 messageId);
+    event CCIPGasLimitUpdated(uint256 newGasLimit);
+    event AvalancheFactoryUpdated(address newFactory);
+    event MinimumEthUpdated(uint256 newMinimum);
+    event MessageReceived(
+        uint64 indexed sourceChainSelector,
+        address indexed sender,
+        bytes data
+    );
     
+    // Errors
+    error InsufficientETHAmount();
+    error InsufficientETHForFees();
+    error InvalidConfidence();
+    error InvalidCompetitionFactory();
+    error MessageSendFailed();
+    
+    // FIXED CONSTRUCTOR
     constructor(
-        address _ccipRouter,
+        address _router,
         address _avalancheCompetitionFactory
-    ) Ownable(msg.sender) {
-        ccipRouter = IRouterClient(_ccipRouter);
+    ) CCIPReceiver(_router) Ownable(msg.sender) {
+        i_router = IRouterClient(_router);
         avalancheCompetitionFactory = _avalancheCompetitionFactory;
     }
     
     /**
-     * @dev Join Avalanche competition by depositing ETH
-     * @param competitionId Competition ID on Avalanche
-     * @param confidence User's confidence score (1-100)
+     * @dev Join competition from Sepolia with ETH
      */
     function joinCompetitionWithETH(
         uint256 competitionId,
         uint256 confidence
     ) external payable nonReentrant {
-        require(msg.value >= MIN_ETH_DEPOSIT, "Below minimum ETH deposit");
-        require(msg.value <= MAX_ETH_DEPOSIT, "Above maximum ETH deposit");
-        require(confidence >= 1 && confidence <= 100, "Invalid confidence score");
-        require(avalancheCompetitionFactory != address(0), "Avalanche factory not set");
-        require(userParticipations[msg.sender][competitionId] == 0, "Already participated");
+        // Validate inputs
+        if (msg.value < minimumEthAmount) revert InsufficientETHAmount();
+        if (confidence == 0 || confidence > 100) revert InvalidConfidence();
+        if (avalancheCompetitionFactory == address(0)) revert InvalidCompetitionFactory();
         
         // Calculate BETmain equivalent
-        uint256 betmainAmount = msg.value * ETH_TO_BETMAIN_RATE;
+        uint256 betmainAmount = (msg.value * ETH_TO_BETMAIN_RATE * 10**18) / 1 ether;
         
-        // Store participation
-        userParticipations[msg.sender][competitionId] = msg.value;
-        
-        // Prepare cross-chain message data
+        // Prepare cross-chain message
         bytes memory messageData = abi.encode(
-            msg.sender,           // participant address
-            competitionId,        // competition ID
-            betmainAmount,        // BETmain amount to mint
-            confidence,           // confidence score
-            "SEPOLIA"            // source chain identifier
+            msg.sender,           // address participant
+            competitionId,        // uint256 competitionId
+            betmainAmount,        // uint256 betmainAmount
+            confidence,           // uint256 confidence
+            SOURCE_CHAIN_NAME     // string memory sourceChainName = "SEPOLIA"
         );
         
         // Prepare CCIP message
         Client.EVM2AnyMessage memory message = Client.EVM2AnyMessage({
             receiver: abi.encode(avalancheCompetitionFactory),
             data: messageData,
-            tokenAmounts: new Client.EVMTokenAmount[](0), // No token transfers, just data
-            extraArgs: Client._argsToBytes(
-                Client.EVMExtraArgsV1({gasLimit: ccipGasLimit})
-            ),
-            feeToken: address(0) // Pay fees in native ETH
+            tokenAmounts: new Client.EVMTokenAmount[](0),
+            extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: ccipGasLimit})),
+            feeToken: address(0)
         });
         
-        // Calculate and pay CCIP fee
-        uint256 ccipFee = ccipRouter.getFee(AVALANCHE_FUJI_SELECTOR, message);
-        require(address(this).balance >= ccipFee, "Insufficient balance for CCIP fee");
+        // Calculate CCIP fees
+        uint256 ccipFee = i_router.getFee(AVALANCHE_CHAIN_SELECTOR, message);
+        
+        // Ensure we have enough ETH to cover CCIP fees
+        if (msg.value <= ccipFee) revert InsufficientETHForFees();
         
         // Send CCIP message
-        bytes32 messageId = ccipRouter.ccipSend{value: ccipFee}(
-            AVALANCHE_FUJI_SELECTOR,
-            message
-        );
+        bytes32 messageId;
+        try i_router.ccipSend{value: ccipFee}(AVALANCHE_CHAIN_SELECTOR, message) returns (bytes32 _messageId) {
+            messageId = _messageId;
+        } catch {
+            revert MessageSendFailed();
+        }
         
-        emit ParticipationRequested(
+        // Calculate actual ETH amount after fees
+        uint256 actualEthAmount = msg.value - ccipFee;
+        uint256 actualBetmainAmount = (actualEthAmount * ETH_TO_BETMAIN_RATE * 10**18) / 1 ether;
+        
+        // Update statistics
+        userParticipations[msg.sender] += actualBetmainAmount;
+        messageToUser[messageId] = msg.sender;
+        totalParticipations++;
+        totalEthSent += actualEthAmount;
+        
+        emit CrossChainParticipationSent(
             msg.sender,
             competitionId,
-            msg.value,
-            betmainAmount,
+            actualEthAmount,
+            actualBetmainAmount,
             confidence,
             messageId
         );
-        
-        emit CCIPFeePaid(ccipFee, messageId);
     }
     
     /**
-     * @dev Get participation cost including CCIP fee
-     * @param ethAmount ETH amount to deposit
+     * @dev Get participation cost estimate
      */
-    function getParticipationCost(uint256 ethAmount) external view returns (
-        uint256 totalCost,
-        uint256 ccipFee,
-        uint256 betmainEquivalent
-    ) {
-        require(ethAmount >= MIN_ETH_DEPOSIT, "Below minimum");
-        require(ethAmount <= MAX_ETH_DEPOSIT, "Above maximum");
+    function getParticipationCost(uint256 ethAmount) external view returns (uint256 totalCost, uint256 ccipFee, uint256 actualParticipation) {
+        if (avalancheCompetitionFactory == address(0)) {
+            return (0, 0, 0); // Return zeros if not configured
+        }
         
-        // Calculate BETmain equivalent
-        betmainEquivalent = ethAmount * ETH_TO_BETMAIN_RATE;
+        // Calculate BETmain amount
+        uint256 betmainAmount = (ethAmount * ETH_TO_BETMAIN_RATE * 10**18) / 1 ether;
         
-        // Calculate CCIP fee
+        // Prepare dummy message
         bytes memory messageData = abi.encode(
-            msg.sender,
-            1, // dummy competition ID
-            betmainEquivalent,
-            50, // dummy confidence
-            "SEPOLIA"
+            address(0),
+            0,
+            betmainAmount,
+            50,
+            SOURCE_CHAIN_NAME
         );
         
         Client.EVM2AnyMessage memory message = Client.EVM2AnyMessage({
             receiver: abi.encode(avalancheCompetitionFactory),
             data: messageData,
             tokenAmounts: new Client.EVMTokenAmount[](0),
-            extraArgs: Client._argsToBytes(
-                Client.EVMExtraArgsV1({gasLimit: ccipGasLimit})
-            ),
+            extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: ccipGasLimit})),
             feeToken: address(0)
         });
         
-        ccipFee = ccipRouter.getFee(AVALANCHE_FUJI_SELECTOR, message);
+        ccipFee = i_router.getFee(AVALANCHE_CHAIN_SELECTOR, message);
         totalCost = ethAmount + ccipFee;
-        
-        return (totalCost, ccipFee, betmainEquivalent);
+        actualParticipation = ethAmount;
     }
     
     /**
-     * @dev Get user's participation for a competition
+     * @dev CCIP message receiver (required by CCIPReceiver)
      */
-    function getUserParticipation(address user, uint256 competitionId) external view returns (uint256) {
-        return userParticipations[user][competitionId];
-    }
-    
-    /**
-     * @dev Convert ETH amount to BETmain equivalent
-     */
-    function ethToBetmain(uint256 ethAmount) external pure returns (uint256) {
-        return ethAmount * ETH_TO_BETMAIN_RATE;
-    }
-    
-    /**
-     * @dev Update Avalanche competition factory address
-     */
-    function updateAvalancheFactory(address _newFactory) external onlyOwner {
-        require(_newFactory != address(0), "Zero address");
-        avalancheCompetitionFactory = _newFactory;
-    }
-    
-    /**
-     * @dev Update CCIP gas limit
-     */
-    function updateCCIPGasLimit(uint256 _newGasLimit) external onlyOwner {
-        require(_newGasLimit >= 200000, "Gas limit too low");
-        require(_newGasLimit <= 1000000, "Gas limit too high");
-        ccipGasLimit = _newGasLimit;
-    }
-    
-    /**
-     * @dev Fund contract with ETH for CCIP fees
-     */
-    function fundForCCIPFees() external payable {
-        // Allow anyone to fund the contract for CCIP fees
-    }
-    
-    /**
-     * @dev Get contract info
-     */
-    function getContractInfo() external view returns (
-        address ccipRouterAddress,
-        address avalancheFactory,
-        uint256 ethToBetmainRate,
-        uint256 minDeposit,
-        uint256 maxDeposit,
-        uint256 gasLimit,
-        uint256 contractBalance
-    ) {
-        return (
-            address(ccipRouter),
-            avalancheCompetitionFactory,
-            ETH_TO_BETMAIN_RATE,
-            MIN_ETH_DEPOSIT,
-            MAX_ETH_DEPOSIT,
-            ccipGasLimit,
-            address(this).balance
+    function _ccipReceive(Client.Any2EVMMessage memory message) internal override {
+        emit MessageReceived(
+            message.sourceChainSelector,
+            abi.decode(message.sender, (address)),
+            message.data
         );
     }
     
     /**
-     * @dev Emergency withdraw ETH (owner only)
+     * @dev Update Avalanche factory address (owner only)
      */
-    function emergencyWithdraw(uint256 amount) external onlyOwner {
-        require(amount <= address(this).balance, "Insufficient balance");
-        (bool success, ) = payable(owner()).call{value: amount}("");
-        require(success, "Transfer failed");
+    function updateAvalancheFactory(address newFactory) external onlyOwner {
+        avalancheCompetitionFactory = newFactory;
+        emit AvalancheFactoryUpdated(newFactory);
     }
     
-    // Allow contract to receive ETH
+    /**
+     * @dev Get current chain name
+     */
+    function getSourceChainName() external pure returns (string memory) {
+        return SOURCE_CHAIN_NAME;
+    }
+    
+    /**
+     * @dev Get contract statistics
+     */
+    function getStats() external view returns (
+        uint256 _totalParticipations,
+        uint256 _totalEthSent,
+        uint256 _contractBalance
+    ) {
+        return (totalParticipations, totalEthSent, address(this).balance);
+    }
+    
+    /**
+     * @dev Get avalanche factory address (debug function)
+     */
+    function getFactoryAddress() external view returns (address) {
+        return avalancheCompetitionFactory;
+    }
+    
+    /**
+     * @dev Emergency function to receive ETH
+     */
     receive() external payable {}
+    
+    /**
+     * @dev Get contract ETH balance
+     */
+    function getContractBalance() external view returns (uint256) {
+        return address(this).balance;
+    }
 }
