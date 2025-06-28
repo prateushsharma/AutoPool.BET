@@ -27,4 +27,4 @@ Contract Address of PrizeOracle.sol (deployed on Avanalanche FUJI testnet) :0x70
 AvalancheCCIPBridge contract address (Deployed on Avalanche FUJI testnet):0xf416d0e2670d4016B42188a9070f2d8c9B2A60ad
 CCIP Gateway contract address (deployed on sepolia):0x26cF4022AC4e15405CFBfd45566F0DEdC80d74d4
 
-CompetitionFactory contract addaress (deployed on Avalanche FUJI testnet): 0x3Ea4Dbc22AF0647265f0629044aB90c8d55F20D3
+CompetitionFactory contract addaress (deployed on Avalanche FUJI testnet): 0x53BA3e2AED1f8a5C3fe7B3026C07B83AD24c31f5
