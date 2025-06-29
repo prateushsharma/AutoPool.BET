@@ -1,7 +1,7 @@
 // Place this file as: src/components/WalletConnectButton.tsx
 
 import React from 'react';
-import { useWallet } from '../context/WalletContext';
+import { useWallet } from '../contexts/WalletContext';
 import './WalletConnectButton.css';
 
 interface WalletConnectButtonProps {

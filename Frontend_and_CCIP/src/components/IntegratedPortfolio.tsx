@@ -2,7 +2,7 @@
 // Complete portfolio integration with all contracts and chains
 
 import React, { useState, useEffect } from 'react';
-import { useWallet } from '../context/WalletContext';
+import { useWallet } from '../contexts/WalletContext';
 import { contractService, ContractUtils, TokenBalance } from '../services/contractService';
 import { 
   getActiveChains, 

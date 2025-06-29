@@ -473,4 +473,4 @@ export const DISPATCH_PARTICIPATION_ABI=[
 		"stateMutability": "payable",
 		"type": "receive"
 	}
-]
+] as const;

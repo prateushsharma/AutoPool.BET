@@ -2,7 +2,7 @@
 // Landing page for PulsePicksAI - AI Strategy Betting Protocol
 
 import React from 'react';
-import { useWallet } from '../context/WalletContext';
+import { useWallet } from '../contexts/WalletContext';
 import { USE_TESTNET, ENV_INFO } from '../config/contracts';
 import './LandingPage.css';
 

@@ -926,4 +926,4 @@ export const ENCHANCED_COMPETITION_FACTORY_ABI=[
 		"stateMutability": "view",
 		"type": "function"
 	}
-]
+] as const;

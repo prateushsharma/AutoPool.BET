@@ -563,4 +563,4 @@ export const SEPOLIA_PARTICIPATION_ABI=[
 		"stateMutability": "payable",
 		"type": "receive"
 	}
-]
+] as const;

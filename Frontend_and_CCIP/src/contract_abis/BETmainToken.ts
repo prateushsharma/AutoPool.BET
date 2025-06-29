@@ -836,4 +836,4 @@ export const BETMAIN_TOKEN_ABI=[
 		"stateMutability": "nonpayable",
 		"type": "function"
 	}
-]
+] as const;

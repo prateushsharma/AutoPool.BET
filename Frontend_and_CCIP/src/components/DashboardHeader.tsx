@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useWallet } from '../context/WalletContext';
+import { useWallet } from '../contexts/WalletContext';
 import WalletConnectButton from './WalletConnectButton';
 import './DashboardHeader.css';
 

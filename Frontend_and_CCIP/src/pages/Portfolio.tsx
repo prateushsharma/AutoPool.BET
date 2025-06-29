@@ -2,7 +2,7 @@
 // Your existing portfolio with contract integration added
 
 import React, { useState, useEffect } from 'react';
-import { useWallet } from '../context/WalletContext';
+import { useWallet } from '../contexts/WalletContext';
 import { useContracts, QuickUpdate } from '../hooks/useContracts';
 import './Portfolio.css';
 

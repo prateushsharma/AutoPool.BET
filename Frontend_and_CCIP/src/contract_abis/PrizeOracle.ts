@@ -670,4 +670,4 @@ export const PRIZE_ORACLE = [
 		"stateMutability": "nonpayable",
 		"type": "function"
 	}
-]
+] as const;
