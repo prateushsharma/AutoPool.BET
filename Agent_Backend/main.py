@@ -13,6 +13,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
+
+timer_active = False
+
 # CORS Middleware
 app.add_middleware(
     CORSMiddleware,
@@ -215,6 +218,8 @@ async def update_leaderboard(liquidation_summary, session_id, current_price):
 # Timer Functions
 async def auto_stop_pool():
     """Auto-stop pool after 10 minutes"""
+    global timer_active
+    timer_active = True 
     print("🕐 Timer started: Pool will auto-stop in 10 minutes...")
     await asyncio.sleep(600)  # 10 minutes
     
@@ -238,8 +243,12 @@ async def auto_stop_pool():
     except Exception as e:
         print(f"❌ Error in auto-stop: {str(e)}")
 
+    finally:
+        timer_active = False  # Set to False when timer ends
+
 async def process_stop_decision(wallet_address: str):
     """Process auto-stop decision - liquidates ALL users"""
+    global timer_active
     try:
         await initialize_trading_db()
         trading_db_path = os.path.join("database", "trading.db")
@@ -348,7 +357,9 @@ async def process_stop_decision(wallet_address: str):
             print(f"   🔒 POOL LOCKED - Waiting for new users to restart")
             print("=" * 60)
                 
+        timer_active = False
     except Exception as e:
+        timer_active = False
         print(f"❌ Error in process_stop_decision: {str(e)}")
 
 # API Endpoints
@@ -436,7 +447,7 @@ async def add_users(request: BulkUserRequest):
     """
     WORKFLOW: Reset pool → Add users → Start timer → Open trading
     """
-    global timer_task
+    global timer_task, timer_active
     
     # Validate input
     if len(request.names) != len(request.wallet_addresses):
@@ -539,6 +550,7 @@ async def add_users(request: BulkUserRequest):
             if created_count > 0:
                 print("3️⃣ Starting 10-minute trading session...")
                 timer_task = asyncio.create_task(auto_stop_pool())
+                timer_active = True
                 print("   ⏰ Timer started - Auto-liquidation in 10 minutes")
                 
                 # STEP 4: Open pool
@@ -1193,13 +1205,14 @@ async def check_pool_status():
 @app.post("/reset_pool")
 async def reset_pool():
     """DANGER: Complete reset - deletes ALL data and reopens pool"""
-    global timer_task
+    global timer_task, timer_active
     
     try:
         # Cancel timer
         if timer_task is not None:
             timer_task.cancel()
             timer_task = None
+            timer_active = False
             print("🛑 Auto-stop timer cancelled due to pool reset")
         
         await initialize_trading_db()
@@ -1219,7 +1232,7 @@ async def reset_pool():
 @app.post("/reopen_pool")
 async def reopen_pool():
     """Reopen the pool without losing user data"""
-    global timer_task
+    global timer_task, timer_active
     
     try:
         await initialize_trading_db()
@@ -1229,6 +1242,7 @@ async def reopen_pool():
         if timer_task is not None:
             timer_task.cancel()
             timer_task = None
+            timer_active = False
             print("🛑 Auto-stop timer cancelled due to manual pool reopen")
         
         return {
@@ -1428,6 +1442,16 @@ async def get_leaderboard_summary():
             "error": str(e),
             "message": "Error retrieving leaderboard summary"
         }
+
+@app.get("/heartbeat")
+async def heartbeat():
+    """
+    Returns timer status without any parameters
+    Returns True when timer is active, False when timer is not active
+    """
+    global timer_active
+    return timer_active
+
 
 if __name__ == "__main__":
     import uvicorn
