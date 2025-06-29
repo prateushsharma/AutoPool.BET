@@ -5,6 +5,8 @@
   min-height: 100vh;
   background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%);
   color: #ffffff;
+  position: relative;
+  overflow-x: hidden;
 }
 
 .dashboard-header {
@@ -15,6 +17,8 @@
   border-bottom: 1px solid rgba(64, 64, 64, 0.3);
   background: rgba(32, 32, 32, 0.3);
   backdrop-filter: blur(10px);
+  position: relative;
+  z-index: 10;
 }
 
 .header-left {
@@ -40,6 +44,145 @@
   display: flex;
   align-items: center;
   gap: 1rem;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.network-dropdown {
+  position: relative;
+  z-index: 1000;
+}
+
+.network-btn {
+  background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+  color: #ffffff;
+  border: 1px solid rgba(107, 114, 128, 0.3);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 100px;
+}
+
+.network-btn:hover {
+  background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+  border-color: rgba(156, 163, 175, 0.5);
+  transform: translateY(-1px);
+}
+
+.network-icon {
+  font-size: 1rem;
+}
+
+.network-text {
+  font-size: 0.85rem;
+}
+
+.network-popup {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  background: rgba(20, 20, 20, 0.98);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(64, 64, 64, 0.6);
+  border-radius: 12px;
+  padding: 0.75rem;
+  min-width: 220px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+  z-index: 9999;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.network-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(64, 64, 64, 0.3);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.close-btn-small {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.3s ease;
+}
+
+.close-btn-small:hover {
+  color: #ffffff;
+}
+
+.network-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.network-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(64, 64, 64, 0.3);
+  border: 1px solid rgba(64, 64, 64, 0.4);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+  font-size: 0.85rem;
+}
+
+.network-item:hover:not(:disabled) {
+  background: rgba(64, 64, 64, 0.5);
+  border-color: rgba(128, 128, 128, 0.6);
+  transform: translateY(-1px);
+}
+
+.network-item.current {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.4);
+}
+
+.network-item:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.network-item:disabled:hover {
+  transform: none;
+}
+
+.network-emoji {
+  font-size: 1.1rem;
+}
+
+.network-item .network-name {
+  color: #ffffff;
+  font-weight: 500;
+  flex: 1;
+}
+
+.current-badge {
+  color: #22c55e;
+  font-size: 0.9rem;
+  font-weight: bold;
 }
 
 .wallet-btn {
@@ -264,6 +407,229 @@
   background: rgba(64, 64, 64, 0.3);
 }
 
+.network-modal {
+  min-width: 450px;
+}
+
+.network-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.network-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background: rgba(64, 64, 64, 0.3);
+  border: 1px solid rgba(64, 64, 64, 0.4);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+}
+
+.network-option:hover:not(:disabled) {
+  background: rgba(64, 64, 64, 0.5);
+  border-color: rgba(128, 128, 128, 0.6);
+  transform: translateY(-1px);
+}
+
+.network-option.current {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.network-option:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.network-option:disabled:hover {
+  transform: none;
+}
+
+.network-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.network-name {
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.network-status {
+  color: #9ca3af;
+  font-size: 0.85rem;
+}
+
+.network-option.current .network-status {
+  color: #22c55e;
+}
+
+.connected-indicator {
+  color: #22c55e;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+/* Create Competition Modal */
+.create-modal {
+  background: rgba(20, 20, 20, 0.98);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(64, 64, 64, 0.6);
+  border-radius: 16px;
+  padding: 2rem;
+  min-width: 500px;
+  max-width: 90vw;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.create-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.form-input {
+  background: rgba(64, 64, 64, 0.3);
+  border: 1px solid rgba(64, 64, 64, 0.5);
+  border-radius: 8px;
+  padding: 0.75rem;
+  color: #ffffff;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: rgba(156, 163, 175, 0.7);
+  background: rgba(64, 64, 64, 0.5);
+}
+
+.form-input::placeholder {
+  color: #9ca3af;
+}
+
+.form-hint {
+  color: #9ca3af;
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+.form-slider {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(64, 64, 64, 0.5);
+  outline: none;
+  cursor: pointer;
+}
+
+.form-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+  border: 2px solid #9ca3af;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.form-slider::-webkit-slider-thumb:hover {
+  background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+  border-color: #ffffff;
+}
+
+.form-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+  border: 2px solid #9ca3af;
+  cursor: pointer;
+}
+
+.slider-labels {
+  display: flex;
+  justify-content: space-between;
+  color: #9ca3af;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.cancel-btn {
+  flex: 1;
+  background: rgba(64, 64, 64, 0.5);
+  color: #9ca3af;
+  border: 1px solid rgba(64, 64, 64, 0.6);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+}
+
+.cancel-btn:hover:not(:disabled) {
+  background: rgba(64, 64, 64, 0.7);
+  color: #ffffff;
+}
+
+.submit-btn {
+  flex: 1;
+  background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+  color: #ffffff;
+  border: 1px solid rgba(107, 114, 128, 0.3);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.submit-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+  border-color: rgba(156, 163, 175, 0.5);
+  transform: translateY(-1px);
+}
+
+.submit-btn:disabled,
+.cancel-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.submit-btn:disabled:hover,
+.cancel-btn:disabled:hover {
+  transform: none;
+}
+
 /* Wallet Modal Styles */
 .wallet-modal-overlay {
   position: fixed;
@@ -391,6 +757,46 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
+  .header-right {
+    flex-direction: column;
+    width: 100%;
+    gap: 0.5rem;
+  }
+
+  .network-btn {
+    min-width: auto;
+    width: auto;
+  }
+
+  .network-popup {
+    right: 0;
+    min-width: 200px;
+  }
+
+  .network-item {
+    padding: 0.6rem;
+    font-size: 0.8rem;
+  }
+
+  .network-modal {
+    min-width: 300px;
+    padding: 1.5rem;
+  }
+
+  .network-option {
+    padding: 0.75rem;
+  }
+
+  .create-modal {
+    min-width: 350px;
+    padding: 1.5rem;
+  }
+
+  .form-actions {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
   .wallet-modal {
     min-width: 300px;
     padding: 1.5rem;
