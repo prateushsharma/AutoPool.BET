@@ -4,6 +4,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import Dashboard from './components/Dashboard';
+import GameDetails from './components/GameDetails';
 import './App.css';
 
 // Landing Page Component
@@ -75,6 +76,7 @@ const App: React.FC = () => {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/home" element={<DashboardPage />} />
+          <Route path="/game/:roundId" element={<GameDetails />} />
         </Routes>
       </div>
     </Router>

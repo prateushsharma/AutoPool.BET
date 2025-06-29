@@ -1,5 +1,4 @@
 // Backend/services/groqService.js - Complete Fixed Groq AI service
-const Groq = require('groq-sdk/index.mjs');
 
 class GroqService {
   constructor() {
@@ -12,18 +11,21 @@ class GroqService {
   }
 
   async initialize() {
-    try {
-      this.client = new Groq({
-        apiKey: process.env.GROQ_API_KEY,
-      });
-      this.isInitialized = true;
-      console.log('✅ Groq service initialized');
-    } catch (error) {
-      console.error('❌ Failed to initialize Groq:', error);
-      throw error;
-    }
-  }
+  try {
+    const GroqModule = await import('groq-sdk');  // ✅ dynamic ESM import
+    const Groq = GroqModule.default;               // ✅ use .default!
 
+    this.client = new Groq({
+      apiKey: process.env.GROQ_API_KEY,
+    });
+
+    this.isInitialized = true;
+    console.log('✅ Groq service initialized');
+  } catch (error) {
+    console.error('❌ Failed to initialize Groq:', error);
+    throw error;
+  }
+}
   // Rate-limited request wrapper
   async makeGroqRequest(requestFunction) {
     return new Promise((resolve, reject) => {

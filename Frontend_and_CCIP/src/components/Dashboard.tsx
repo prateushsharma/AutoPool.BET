@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { createCompetition, getCompetitionCounter } from '../contracts/CompetitionFactory';
+import { useNavigate } from 'react-router-dom';
 import { ethers } from 'ethers';
 import './Dashboard.css';
 
@@ -18,28 +19,115 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ onBackToLanding }) => {
+  const navigate = useNavigate();
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   const [isNetworkModalOpen, setIsNetworkModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isAIModalOpen, setIsAIModalOpen] = useState(false);
   const [connectedWallet, setConnectedWallet] = useState<string | null>(null);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isSwitchingNetwork, setIsSwitchingNetwork] = useState(false);
   const [isCreatingCompetition, setIsCreatingCompetition] = useState(false);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [chainId, setChainId] = useState<string | null>(null);
   
-  // Create Competition Form State
+  // Real games data
+  const [games, setGames] = useState<any[]>([]);
+  const [loadingGames, setLoadingGames] = useState(true);
+  
+  // AI Step 1 Form State
+  const [aiForm, setAiForm] = useState({
+    query: '',
+    maxParticipants: 10,
+    minParticipants: 2,
+    executionInterval: 15,
+    autoStart: true
+  });
+
+  // AI Response + Create Competition Form State
   const [competitionForm, setCompetitionForm] = useState({
     title: '',
     investment: '',
-    confidence: 50
+    confidence: 50,
+    aiRoundId: '',
+    competitionId: 0
   });
+
+  // AI Generated Config
+  const [aiConfig, setAiConfig] = useState<any>(null);
+
+  const networks = [
+    { name: 'Avalanche Fuji', chainId: '0xa869', rpcUrl: 'https://api.avax-test.network/ext/bc/C/rpc', emoji: '🔺' },
+    { name: 'Ethereum Sepolia', chainId: '0xaa36a7', rpcUrl: 'https://sepolia.infura.io/v3/YOUR_KEY', emoji: '🔷' },
+    { name: 'Base', chainId: '0x2105', rpcUrl: 'https://mainnet.base.org', emoji: '🔵' },
+    { name: 'Arbitrum', chainId: '0xa4b1', rpcUrl: 'https://arb1.arbitrum.io/rpc', emoji: '🔷' },
+    { name: 'Polygon', chainId: '0x89', rpcUrl: 'https://polygon-rpc.com', emoji: '🟣' },
+    { name: 'Optimism', chainId: '0xa', rpcUrl: 'https://mainnet.optimism.io', emoji: '🔴' },
+    { name: 'Ethereum', chainId: '0x1', rpcUrl: 'https://mainnet.infura.io/v3/YOUR_KEY', emoji: '💎' },
+    { name: 'Avalanche', chainId: '0xa86a', rpcUrl: 'https://api.avax.network/ext/bc/C/rpc', emoji: '⛰️' },
+  ];
 
   // Check if wallet is already connected on component mount
   useEffect(() => {
     checkWalletConnection();
     setupEventListeners();
+    fetchActiveGames(); // Load real games
   }, []);
+
+  // Fetch active games from API
+  const fetchActiveGames = async () => {
+    setLoadingGames(true);
+    try {
+      console.log('Fetching active games...');
+      
+      const response = await fetch('http://localhost:5000/api/game/list-rounds', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'active',
+          limit: 20
+        })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setGames(result.rounds || []);
+        console.log('Loaded games:', result.rounds);
+      } else {
+        console.error('Failed to load games:', result.error);
+        setGames([]);
+      }
+    } catch (error) {
+      console.error('Error fetching games:', error);
+      setGames([]);
+    } finally {
+      setLoadingGames(false);
+    }
+  };
+
+  // Navigate to game details
+  const handleGameClick = (roundId: string) => {
+    navigate(`/game/${roundId}`);
+  };
+
+  // Format time for display
+  const formatTime = (timeString?: string) => {
+    if (!timeString) return 'Not started';
+    const date = new Date(timeString);
+    return date.toLocaleString();
+  };
+
+  // Get status color
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'active': return '#22c55e';
+      case 'waiting': return '#f59e0b';
+      case 'finished': return '#6b7280';
+      default: return '#9ca3af';
+    }
+  };
 
   const checkWalletConnection = async () => {
     if (typeof window.ethereum !== 'undefined') {
@@ -139,17 +227,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onBackToLanding }) => {
     };
     return chains[chainId] || `Chain ${chainId}`;
   };
-
-  const networks = [
-    { name: 'Avalanche Fuji', chainId: '0xa869', rpcUrl: 'https://api.avax-test.network/ext/bc/C/rpc', emoji: '🔺' },
-    { name: 'Ethereum Sepolia', chainId: '0xaa36a7', rpcUrl: 'https://sepolia.infura.io/v3/YOUR_KEY', emoji: '🔷' },
-    { name: 'Base', chainId: '0x2105', rpcUrl: 'https://mainnet.base.org', emoji: '🔵' },
-    { name: 'Arbitrum', chainId: '0xa4b1', rpcUrl: 'https://arb1.arbitrum.io/rpc', emoji: '🔷' },
-    { name: 'Polygon', chainId: '0x89', rpcUrl: 'https://polygon-rpc.com', emoji: '🟣' },
-    { name: 'Optimism', chainId: '0xa', rpcUrl: 'https://mainnet.optimism.io', emoji: '🔴' },
-    { name: 'Ethereum', chainId: '0x1', rpcUrl: 'https://mainnet.infura.io/v3/YOUR_KEY', emoji: '💎' },
-    { name: 'Avalanche', chainId: '0xa86a', rpcUrl: 'https://api.avax.network/ext/bc/C/rpc', emoji: '⛰️' },
-  ];
 
   const switchNetwork = async (targetChainId: string, rpcUrl: string, networkName: string) => {
     if (!window.ethereum) {
@@ -284,7 +361,19 @@ const Dashboard: React.FC<DashboardProps> = ({ onBackToLanding }) => {
       alert('Please connect your wallet first');
       return;
     }
-    setIsCreateModalOpen(true);
+    setIsAIModalOpen(true);
+  };
+
+  const closeAIModal = () => {
+    setIsAIModalOpen(false);
+    setAiForm({
+      query: '',
+      maxParticipants: 10,
+      minParticipants: 2,
+      executionInterval: 15,
+      autoStart: true
+    });
+    setAiConfig(null);
   };
 
   const closeCreateModal = () => {
@@ -292,8 +381,18 @@ const Dashboard: React.FC<DashboardProps> = ({ onBackToLanding }) => {
     setCompetitionForm({
       title: '',
       investment: '',
-      confidence: 50
+      confidence: 50,
+      aiRoundId: '',
+      competitionId: 0
     });
+    setAiConfig(null);
+  };
+
+  const handleAIFormChange = (field: string, value: string | number | boolean) => {
+    setAiForm(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   const handleFormChange = (field: string, value: string | number) => {
@@ -303,6 +402,67 @@ const Dashboard: React.FC<DashboardProps> = ({ onBackToLanding }) => {
     }));
   };
 
+  // Extract competition ID from round ID
+  const extractCompetitionId = (roundId: string): number => {
+    const parts = roundId.split('_');
+    const timestamp = parts[1]; // "1751217864254"
+    return parseInt(timestamp.slice(-4)); // Last 4 digits: "4254"
+  };
+
+  // Step 1: Generate AI competition
+  const generateAICompetition = async () => {
+    if (!aiForm.query.trim()) {
+      alert('Please enter a competition prompt');
+      return;
+    }
+
+    setIsGeneratingAI(true);
+    try {
+      const response = await fetch('http://localhost:5000/api/game/create-game-from-prompt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: aiForm.query,
+          maxParticipants: aiForm.maxParticipants,
+          minParticipants: aiForm.minParticipants,
+          executionInterval: aiForm.executionInterval,
+          autoStart: aiForm.autoStart
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        console.log('AI Competition Generated:', result);
+        
+        // Extract competition ID from round ID
+        const competitionId = extractCompetitionId(result.round.id);
+        
+        // Set AI config and pre-fill form
+        setAiConfig(result);
+        setCompetitionForm({
+          title: result.round.title || result.aiConfig?.title || 'AI Generated Competition',
+          investment: result.round.startingBalance?.toString() || result.aiConfig?.startingBalance?.toString() || '100',
+          confidence: 50,
+          aiRoundId: result.round.id,
+          competitionId: competitionId
+        });
+
+        // Move to create modal
+        setIsAIModalOpen(false);
+        setIsCreateModalOpen(true);
+      } else {
+        alert(`Failed to generate AI competition: ${result.error}`);
+      }
+    } catch (error: any) {
+      console.error('Error generating AI competition:', error);
+      alert(`Error: ${error.message}`);
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
+  // Step 2: Create on blockchain
   const submitCreateCompetition = async () => {
     if (!window.ethereum || !chainId) {
       alert('Please connect your wallet');
@@ -324,26 +484,21 @@ const Dashboard: React.FC<DashboardProps> = ({ onBackToLanding }) => {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner();
       
-      // Get next competition ID
-      const counterResult = await getCompetitionCounter(provider, chainId);
-      if (!counterResult.success) {
-        throw new Error(counterResult.error);
-      }
-      
-      const nextId = parseInt(counterResult.data.nextId);
-      
-      // Create competition
+      // Use extracted competition ID from AI round
       const result = await createCompetition(signer, chainId, {
-        competitionId: nextId,
+        competitionId: competitionForm.competitionId,
         title: competitionForm.title,
         investment: competitionForm.investment,
         confidence: competitionForm.confidence
       });
 
       if (result.success) {
-        alert(`Competition created successfully! TX: ${result.txHash}`);
+        alert(`Competition created successfully! 
+        AI Round: ${competitionForm.aiRoundId}
+        Blockchain ID: ${competitionForm.competitionId}
+        TX: ${result.txHash}`);
         closeCreateModal();
-        // TODO: Refresh competitions list
+        fetchActiveGames(); // Refresh games list
       } else {
         alert(`Failed to create competition: ${result.error}`);
       }
@@ -355,6 +510,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onBackToLanding }) => {
       setIsCreatingCompetition(false);
     }
   };
+
   return (
     <div className="dashboard-container">
       <div className="dashboard-header">
@@ -427,82 +583,197 @@ const Dashboard: React.FC<DashboardProps> = ({ onBackToLanding }) => {
         </div>
         
         <div className="competitions-grid">
-          <div className="competition-card">
-            <div className="card-header">
-              <h3>AI Trading Q1 2025</h3>
-              <span className="status-badge active">Active</span>
+          {loadingGames ? (
+            <div className="loading-games">
+              <div className="loading-spinner"></div>
+              <p>Loading active games...</p>
             </div>
-            <div className="card-content">
-              <div className="pool-info">
-                <span className="pool-label">Total Pool</span>
-                <span className="pool-amount">1,250 BET</span>
+          ) : games.length > 0 ? (
+            games.map((game) => (
+              <div 
+                key={game.id} 
+                className="competition-card clickable" 
+                onClick={() => handleGameClick(game.id)}
+              >
+                <div className="card-header">
+                  <h3>{game.title}</h3>
+                  <span 
+                    className="status-badge"
+                    style={{ backgroundColor: getStatusColor(game.status) }}
+                  >
+                    {game.status.toUpperCase()}
+                  </span>
+                </div>
+                <div className="card-content">
+                  <div className="pool-info">
+                    <span className="pool-label">Starting Balance</span>
+                    <span className="pool-amount">${game.startingBalance || 'N/A'}</span>
+                  </div>
+                  <div className="participants-info">
+                    <span className="participants-label">Participants</span>
+                    <span className="participants-count">
+                      {game.currentParticipants || 0}/{game.maxParticipants || 'N/A'}
+                    </span>
+                  </div>
+                  <div className="creator-info">
+                    <span className="creator-label">Game ID</span>
+                    <span className="creator-address">
+                      {game.id.split('_')[2]?.substring(0, 8) || 'Unknown'}
+                    </span>
+                  </div>
+                  <div className="time-info">
+                    <span className="time-label">Start Time</span>
+                    <span className="time-value">{formatTime(game.startTime)}</span>
+                  </div>
+                </div>
+                <button 
+                  className="join-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleGameClick(game.id);
+                  }}
+                >
+                  View Details
+                </button>
               </div>
-              <div className="participants-info">
-                <span className="participants-label">Participants</span>
-                <span className="participants-count">8/20</span>
-              </div>
-              <div className="creator-info">
-                <span className="creator-label">Creator</span>
-                <span className="creator-address">0x742d...5B38</span>
-              </div>
+            ))
+          ) : (
+            <div className="no-games">
+              <h3>No Active Games</h3>
+              <p>Create your first AI competition to get started!</p>
+              <button 
+                className="create-first-game-btn" 
+                onClick={handleCreateCompetition}
+              >
+                🤖 Create First Game
+              </button>
             </div>
-            <button className="join-btn">Join Competition</button>
-          </div>
-
-          <div className="competition-card">
-            <div className="card-header">
-              <h3>DeFi Strategy Master</h3>
-              <span className="status-badge active">Active</span>
-            </div>
-            <div className="card-content">
-              <div className="pool-info">
-                <span className="pool-label">Total Pool</span>
-                <span className="pool-amount">890 BET</span>
-              </div>
-              <div className="participants-info">
-                <span className="participants-label">Participants</span>
-                <span className="participants-count">5/15</span>
-              </div>
-              <div className="creator-info">
-                <span className="creator-label">Creator</span>
-                <span className="creator-address">0x8f1a...9C22</span>
-              </div>
-            </div>
-            <button className="join-btn">Join Competition</button>
-          </div>
-
-          <div className="competition-card">
-            <div className="card-header">
-              <h3>Crypto Prediction Pro</h3>
-              <span className="status-badge closed">Closed</span>
-            </div>
-            <div className="card-content">
-              <div className="pool-info">
-                <span className="pool-label">Total Pool</span>
-                <span className="pool-amount">2,150 BET</span>
-              </div>
-              <div className="participants-info">
-                <span className="participants-label">Participants</span>
-                <span className="participants-count">12/12</span>
-              </div>
-              <div className="creator-info">
-                <span className="creator-label">Creator</span>
-                <span className="creator-address">0x3d8b...7F44</span>
-              </div>
-            </div>
-            <button className="join-btn disabled">View Results</button>
-          </div>
+          )}
         </div>
       </div>
 
-      {/* Create Competition Modal */}
+      {/* AI Prompt Modal - Step 1 */}
+      {isAIModalOpen && (
+        <div className="wallet-modal-overlay" onClick={closeAIModal}>
+          <div className="ai-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>🤖 Create AI Competition</h3>
+              <button className="close-btn" onClick={closeAIModal}>×</button>
+            </div>
+            
+            <div className="ai-form">
+              <div className="form-group">
+                <label>Describe Your Competition</label>
+                <textarea
+                  placeholder="e.g. Create a 5-minute ETH trading game with $100 investment and 5% profit target"
+                  value={aiForm.query}
+                  onChange={(e) => handleAIFormChange('query', e.target.value)}
+                  className="form-textarea"
+                  rows={3}
+                />
+                <span className="form-hint">AI will extract tokens, duration, investment amounts, and strategy</span>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Max Participants</label>
+                  <input
+                    type="number"
+                    value={aiForm.maxParticipants}
+                    onChange={(e) => handleAIFormChange('maxParticipants', parseInt(e.target.value))}
+                    className="form-input"
+                    min="2"
+                    max="20"
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label>Min Participants</label>
+                  <input
+                    type="number"
+                    value={aiForm.minParticipants}
+                    onChange={(e) => handleAIFormChange('minParticipants', parseInt(e.target.value))}
+                    className="form-input"
+                    min="1"
+                    max="10"
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Execution Interval (seconds)</label>
+                  <input
+                    type="number"
+                    value={aiForm.executionInterval}
+                    onChange={(e) => handleAIFormChange('executionInterval', parseInt(e.target.value))}
+                    className="form-input"
+                    min="5"
+                    max="60"
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={aiForm.autoStart}
+                      onChange={(e) => handleAIFormChange('autoStart', e.target.checked)}
+                      className="form-checkbox"
+                    />
+                    Auto Start Game
+                  </label>
+                </div>
+              </div>
+              
+              <div className="form-actions">
+                <button 
+                  className="cancel-btn" 
+                  onClick={closeAIModal}
+                  disabled={isGeneratingAI}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="ai-generate-btn" 
+                  onClick={generateAICompetition}
+                  disabled={isGeneratingAI}
+                >
+                  {isGeneratingAI ? '🤖 Generating...' : '🤖 Generate with AI'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Competition Modal - Step 2 */}
       {isCreateModalOpen && (
         <div className="wallet-modal-overlay" onClick={closeCreateModal}>
           <div className="create-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Create New Competition</h3>
+              <h3>🚀 Create on Blockchain</h3>
               <button className="close-btn" onClick={closeCreateModal}>×</button>
             </div>
+            
+            {aiConfig && (
+              <div className="ai-summary">
+                <h4>🤖 AI Generated Configuration</h4>
+                <div className="ai-details">
+                  <span><strong>Round ID:</strong> {competitionForm.aiRoundId}</span>
+                  <span><strong>Blockchain ID:</strong> {competitionForm.competitionId}</span>
+                  {aiConfig.aiConfig?.tokens && (
+                    <span><strong>Tokens:</strong> {aiConfig.aiConfig.tokens.join(', ')}</span>
+                  )}
+                  {aiConfig.aiConfig?.strategy && (
+                    <span><strong>Strategy:</strong> {aiConfig.aiConfig.strategy}</span>
+                  )}
+                  {aiConfig.round?.duration && (
+                    <span><strong>Duration:</strong> {Math.floor(aiConfig.round.duration / 1000)}s</span>
+                  )}
+                </div>
+              </div>
+            )}
             
             <div className="create-form">
               <div className="form-group">
@@ -560,7 +831,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onBackToLanding }) => {
                   onClick={submitCreateCompetition}
                   disabled={isCreatingCompetition}
                 >
-                  {isCreatingCompetition ? 'Creating...' : 'Create Competition'}
+                  {isCreatingCompetition ? 'Creating...' : '🚀 Create on Blockchain'}
                 </button>
               </div>
             </div>

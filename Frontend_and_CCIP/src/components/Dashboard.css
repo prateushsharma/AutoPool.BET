@@ -322,6 +322,122 @@
   letter-spacing: 0.5px;
 }
 
+.competition-card.clickable {
+  cursor: pointer;
+}
+
+.competition-card.clickable:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 16px 50px rgba(64, 64, 64, 0.4);
+}
+
+.time-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.time-label {
+  font-size: 0.9rem;
+  color: #9ca3af;
+  font-weight: 400;
+}
+
+.time-value {
+  font-size: 0.85rem;
+  color: #d1d5db;
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+/* Loading Games */
+.loading-games {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem;
+  text-align: center;
+  gap: 1rem;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(64, 64, 64, 0.3);
+  border-top: 3px solid #ffffff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-games p {
+  color: #9ca3af;
+  font-size: 1.1rem;
+}
+
+/* No Games State */
+.no-games {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem;
+  text-align: center;
+  gap: 1.5rem;
+  background: rgba(32, 32, 32, 0.4);
+  border: 2px dashed rgba(64, 64, 64, 0.5);
+  border-radius: 16px;
+}
+
+.no-games h3 {
+  color: #ffffff;
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.no-games p {
+  color: #9ca3af;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.create-first-game-btn {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: #ffffff;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.create-first-game-btn:hover {
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+  border-color: rgba(34, 197, 94, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(34, 197, 94, 0.4);
+}
+
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #ffffff;
+}
+
 .status-badge.active {
   background: rgba(34, 197, 94, 0.2);
   color: #22c55e;
@@ -475,6 +591,127 @@
   color: #22c55e;
   font-size: 1.2rem;
   font-weight: bold;
+}
+
+/* AI Prompt Modal */
+.ai-modal {
+  background: rgba(20, 20, 20, 0.98);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(64, 64, 64, 0.6);
+  border-radius: 16px;
+  padding: 2rem;
+  min-width: 600px;
+  max-width: 90vw;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.ai-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-textarea {
+  background: rgba(64, 64, 64, 0.3);
+  border: 1px solid rgba(64, 64, 64, 0.5);
+  border-radius: 8px;
+  padding: 0.75rem;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 80px;
+  transition: all 0.3s ease;
+}
+
+.form-textarea:focus {
+  outline: none;
+  border-color: rgba(156, 163, 175, 0.7);
+  background: rgba(64, 64, 64, 0.5);
+}
+
+.form-textarea::placeholder {
+  color: #9ca3af;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  margin-top: 1.5rem;
+}
+
+.form-checkbox {
+  accent-color: #374151;
+  transform: scale(1.2);
+}
+
+.ai-generate-btn {
+  flex: 1;
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: #ffffff;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.ai-generate-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+  border-color: rgba(34, 197, 94, 0.5);
+  transform: translateY(-1px);
+}
+
+.ai-generate-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ai-generate-btn:disabled:hover {
+  transform: none;
+}
+
+/* AI Summary in Create Modal */
+.ai-summary {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.ai-summary h4 {
+  color: #22c55e;
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem 0;
+}
+
+.ai-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ai-details span {
+  color: #d1d5db;
+  font-size: 0.85rem;
+}
+
+.ai-details strong {
+  color: #ffffff;
 }
 
 /* Create Competition Modal */
@@ -785,6 +1022,16 @@
 
   .network-option {
     padding: 0.75rem;
+  }
+
+  .ai-modal {
+    min-width: 400px;
+    padding: 1.5rem;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 1rem;
   }
 
   .create-modal {
