@@ -107,7 +107,7 @@ import requests
 import os
 from typing import List, Dict, Union
 
-async def send_client_list() -> bool:
+async def send_client_list(chain_id, token_address) -> bool:
     """
     Reads client list from file and syncs with API endpoint in one operation.
     
@@ -128,7 +128,7 @@ async def send_client_list() -> bool:
     
     # 2. Prepare API request
     api_url = "http://localhost:8000/all_users"
-    payload = {"clients": clients}
+    payload = {"clients": clients, "chain_id": chain_id, "token_address": token_address}
     print(payload)
     result = {
         'success': False,
@@ -196,7 +196,7 @@ async def start_pool(request: StartRequest):
 
     print("✅ All trading agents initialized and running")
 
-    client_list = await send_client_list()
+    client_list = await send_client_list(chain_id, token_address)
 
     stop_signal.clear()
     await start_publisher(chain_id, token_address, stop_signal)
