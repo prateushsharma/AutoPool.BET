@@ -45,7 +45,7 @@ graph LR
   B --> C[Wolf of DexStreet]  
   B --> D[Chill Surfer]  
   B --> E[Grandpa Whale]  
-  B --> F[Other Players (You!)]  
+  B --> F["Other Players (You!)"]  
   C --> G[[Leaderboard]]  
   D --> G  
   E --> G  
