@@ -1,5 +1,5 @@
 // File: src/components/GameDetails.tsx
-// Updated GameDetails component to include Join Game Modal
+// Updated GameDetails component to include Join Game Modal and Live Leaderboard
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -55,6 +55,11 @@ const GameDetails: React.FC = () => {
  const [loading, setLoading] = useState(true);
  const [error, setError] = useState<string | null>(null);
  
+ // Leaderboard State
+ const [leaderboard, setLeaderboard] = useState<any[]>([]);
+ const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
+ const [leaderboardError, setLeaderboardError] = useState<string | null>(null);
+ 
  // Join Modal State
  const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
  
@@ -65,9 +70,6 @@ const GameDetails: React.FC = () => {
  const [isConnecting, setIsConnecting] = useState(false);
  const [isSwitchingNetwork, setIsSwitchingNetwork] = useState(false);
  const [chainId, setChainId] = useState<string | null>(null);
-
-// File: src/components/GameDetails.tsx (Updated)
-// Add Dispatch Chain to the networks array (same as Dashboard)
 
 const networks = [
   { name: 'Avalanche Fuji', chainId: '0xa869', rpcUrl: 'https://api.avax-test.network/ext/bc/C/rpc', emoji: '🔺' },
@@ -85,12 +87,26 @@ const networks = [
    if (roundId) {
      fetchGameDetails(roundId);
    }
-   // Check wallet connection
    checkWalletConnection();
    setupEventListeners();
  }, [roundId]);
 
- // Wallet Functions
+ // Auto-refresh leaderboard for active/running/finished games
+ useEffect(() => {
+   if (gameData && (gameData.status === 'active' || gameData.status === 'running' || gameData.status === 'finished')) {
+     fetchLeaderboard(gameData.id);
+     
+     // Set up auto-refresh for active/running games
+     if (gameData.status === 'active' || gameData.status === 'running') {
+       const interval = setInterval(() => {
+         fetchLeaderboard(gameData.id);
+       }, 10000); // Refresh every 10 seconds
+       
+       return () => clearInterval(interval);
+     }
+   }
+ }, [gameData]);
+
  const checkWalletConnection = async () => {
    if (typeof window.ethereum !== 'undefined') {
      try {
@@ -99,7 +115,6 @@ const networks = [
          setConnectedWallet('MetaMask');
          setWalletAddress(accounts[0]);
          
-         // Get chain ID
          const chainId = await window.ethereum.request({ method: 'eth_chainId' });
          setChainId(chainId);
        }
@@ -111,7 +126,6 @@ const networks = [
 
  const setupEventListeners = () => {
    if (typeof window.ethereum !== 'undefined') {
-     // Listen for account changes
      window.ethereum.on('accountsChanged', (accounts: string[]) => {
        if (accounts.length === 0) {
          setConnectedWallet(null);
@@ -122,7 +136,6 @@ const networks = [
        }
      });
 
-     // Listen for chain changes
      window.ethereum.on('chainChanged', (chainId: string) => {
        setChainId(chainId);
        window.location.reload();
@@ -219,7 +232,6 @@ const getChainName = (chainId: string) => {
    }
  };
 
-
  const getNetworkCurrency = (chainId: string) => {
   const currencies: { [key: string]: any } = {
     '0x1': { name: 'Ether', symbol: 'ETH', decimals: 18 },
@@ -230,11 +242,10 @@ const getChainName = (chainId: string) => {
     '0x2105': { name: 'Ether', symbol: 'ETH', decimals: 18 },
     '0xa': { name: 'Ether', symbol: 'ETH', decimals: 18 },
     '0xaa36a7': { name: 'Ether', symbol: 'ETH', decimals: 18 },
-    '0xbe598': { name: 'Dispatch L1', symbol: 'DIS', decimals: 18 }, // ADDED
+    '0xbe598': { name: 'Dispatch L1', symbol: 'DIS', decimals: 18 },
   };
   return currencies[chainId] || { name: 'Ether', symbol: 'ETH', decimals: 18 };
 };
-
 
  const getBlockExplorer = (chainId: string) => {
   const explorers: { [key: string]: string[] } = {
@@ -246,7 +257,7 @@ const getChainName = (chainId: string) => {
     '0x2105': ['https://basescan.org'],
     '0xa': ['https://optimistic.etherscan.io'],
     '0xaa36a7': ['https://sepolia.etherscan.io'],
-    '0xbe598': ['https://subnets.avax.network/dispatch'], // ADDED (Dispatch explorer)
+    '0xbe598': ['https://subnets.avax.network/dispatch'],
   };
   return explorers[chainId] || ['https://etherscan.io'];
 };
@@ -278,7 +289,6 @@ const getChainName = (chainId: string) => {
    setIsNetworkModalOpen(false);
  };
 
- // Close network modal when clicking outside
  useEffect(() => {
    const handleClickOutside = () => {
      if (isNetworkModalOpen) {
@@ -295,7 +305,6 @@ const getChainName = (chainId: string) => {
    };
  }, [isNetworkModalOpen]);
 
- // Game Functions
  const fetchGameDetails = async (roundId: string) => {
    setLoading(true);
    setError(null);
@@ -325,11 +334,44 @@ const getChainName = (chainId: string) => {
    }
  };
 
+ const fetchLeaderboard = async (roundId: string) => {
+   setLoadingLeaderboard(true);
+   setLeaderboardError(null);
+   
+   try {
+     console.log('Fetching leaderboard for:', roundId);
+     
+     const response = await fetch('http://localhost:5000/api/game/get-enhanced-leaderboard', {
+       method: 'POST',
+       headers: { 'Content-Type': 'application/json' },
+       body: JSON.stringify({ 
+         roundId: roundId,
+         limit: 20
+       })
+     });
+
+     const result = await response.json();
+
+     if (result.success && result.leaderboard) {
+       setLeaderboard(result.leaderboard);
+       console.log('Leaderboard loaded:', result.leaderboard);
+     } else {
+       setLeaderboardError(result.error || 'Failed to load leaderboard');
+       setLeaderboard([]);
+     }
+   } catch (error: any) {
+     console.error('Error fetching leaderboard:', error);
+     setLeaderboardError('Unable to connect to game server');
+     setLeaderboard([]);
+   } finally {
+     setLoadingLeaderboard(false);
+   }
+ };
+
  const handleBackToDashboard = () => {
    navigate('/home');
  };
 
- // Join Game Functions
  const handleJoinGameClick = () => {
    if (!connectedWallet) {
      alert('Please connect your wallet first');
@@ -351,7 +393,6 @@ const getChainName = (chainId: string) => {
    setIsJoinModalOpen(true);
  };
 
- // Get wallet provider and signer
  const getWalletProvider = () => {
    if (!window.ethereum) return null;
    return new ethers.providers.Web3Provider(window.ethereum);
@@ -363,11 +404,11 @@ const getChainName = (chainId: string) => {
    return provider.getSigner();
  };
 
- // Utility Functions
  const getStatusColor = (status: string) => {
    switch (status.toLowerCase()) {
      case 'active': return '#22c55e';
      case 'waiting': return '#f59e0b';
+     case 'running': return '#3b82f6';
      case 'finished': return '#6b7280';
      case 'cancelled': return '#ef4444';
      default: return '#9ca3af';
@@ -393,7 +434,6 @@ const getChainName = (chainId: string) => {
    return new Date(timeString).toLocaleString();
  };
 
- // Loading State
  if (loading) {
    return (
      <div className="game-details-container">
@@ -405,7 +445,6 @@ const getChainName = (chainId: string) => {
    );
  }
 
- // Error State
  if (error) {
    return (
      <div className="game-details-container">
@@ -420,7 +459,6 @@ const getChainName = (chainId: string) => {
    );
  }
 
- // Game Not Found State
  if (!gameData) {
    return (
      <div className="game-details-container">
@@ -440,7 +478,6 @@ const getChainName = (chainId: string) => {
 
  return (
    <div className="game-details-container">
-     {/* Dashboard Header */}
      <div className="dashboard-header">
        <div className="header-left">
          <h1 className="dashboard-title">PulsePicksAI</h1>
@@ -502,7 +539,6 @@ const getChainName = (chainId: string) => {
        </div>
      </div>
 
-     {/* Game Details Header */}
      <div className="game-details-header">
        <div className="header-info">
          <h1 className="game-title">{gameData.title}</h1>
@@ -514,7 +550,6 @@ const getChainName = (chainId: string) => {
 
      <div className="game-details-content">
        <div className="details-grid">
-         {/* Game Overview */}
          <div className="details-card overview-card">
            <h3>📋 Game Overview</h3>
            <div className="detail-item">
@@ -545,7 +580,6 @@ const getChainName = (chainId: string) => {
            </div>
          </div>
 
-         {/* Participants */}
          <div className="details-card participants-card">
            <h3>👥 Participants</h3>
            <div className="participants-stats">
@@ -575,7 +609,6 @@ const getChainName = (chainId: string) => {
            </div>
          </div>
 
-         {/* Trading Stats */}
          <div className="details-card stats-card">
            <h3>📊 Trading Statistics</h3>
            <div className="detail-item">
@@ -596,7 +629,6 @@ const getChainName = (chainId: string) => {
            )}
          </div>
 
-         {/* Allowed Tokens */}
          {gameData.allowedTokens && (
            <div className="details-card tokens-card">
              <h3>🪙 Allowed Tokens</h3>
@@ -608,7 +640,6 @@ const getChainName = (chainId: string) => {
            </div>
          )}
 
-         {/* AI Configuration */}
          {gameData.aiConfig && (
            <div className="details-card ai-config-card">
              <h3>🤖 AI Configuration</h3>
@@ -639,7 +670,6 @@ const getChainName = (chainId: string) => {
            </div>
          )}
 
-         {/* Game Settings */}
          {gameData.settings && (
            <div className="details-card settings-card">
              <h3>⚙️ Game Settings</h3>
@@ -655,7 +685,6 @@ const getChainName = (chainId: string) => {
          )}
        </div>
 
-       {/* Action Buttons */}
        <div className="action-buttons">
          {gameData.status === 'waiting' && (
            <button 
@@ -674,10 +703,115 @@ const getChainName = (chainId: string) => {
          <button className="refresh-btn" onClick={() => fetchGameDetails(gameData.id)}>
            🔄 Refresh
          </button>
+         {(gameData.status === 'active' || gameData.status === 'running' || gameData.status === 'finished') && (
+           <button 
+             className="refresh-btn" 
+             onClick={() => fetchLeaderboard(gameData.id)}
+             disabled={loadingLeaderboard}
+           >
+             {loadingLeaderboard ? '📊 Loading...' : '📊 Refresh Leaderboard'}
+           </button>
+         )}
        </div>
+
+       {(gameData.status === 'active' || gameData.status === 'running' || gameData.status === 'finished') && (
+         <div className="leaderboard-container">
+           <div className="leaderboard-header-section">
+             <h2>🏆 Live Leaderboard</h2>
+             <div className="leaderboard-status">
+               {gameData.status === 'active' || gameData.status === 'running' ? (
+                 <span className="live-indicator">🔴 LIVE</span>
+               ) : (
+                 <span className="final-indicator">✅ FINAL</span>
+               )}
+             </div>
+           </div>
+
+           {loadingLeaderboard ? (
+             <div className="leaderboard-loading">
+               <div className="loading-spinner"></div>
+               <p>Loading leaderboard...</p>
+             </div>
+           ) : leaderboardError ? (
+             <div className="leaderboard-error">
+               <p>❌ {leaderboardError}</p>
+               <button 
+                 className="retry-btn" 
+                 onClick={() => fetchLeaderboard(gameData.id)}
+               >
+                 🔄 Retry
+               </button>
+             </div>
+           ) : leaderboard.length > 0 ? (
+             <div className="leaderboard-table">
+               <div className="leaderboard-table-header">
+                 <div className="rank-col">Rank</div>
+                 <div className="player-col">Player</div>
+                 <div className="pnl-col">P&L</div>
+                 <div className="value-col">Portfolio</div>
+                 <div className="trades-col">Trades</div>
+                 <div className="winrate-col">Win Rate</div>
+                 <div className="grade-col">Grade</div>
+               </div>
+               <div className="leaderboard-table-body">
+                 {leaderboard.map((participant, index) => (
+                   <div key={participant.walletAddress} className="leaderboard-row">
+                     <div className="rank-col">
+                       <span className={`rank-badge rank-${participant.rank <= 3 ? participant.rank : 'other'}`}>
+                         #{participant.rank}
+                       </span>
+                     </div>
+                     <div className="player-col">
+                       <div className="player-info">
+                         <span className="username">{participant.username}</span>
+                         <span className="wallet-address">
+                           {participant.walletAddress.slice(0, 6)}...{participant.walletAddress.slice(-4)}
+                         </span>
+                       </div>
+                     </div>
+                     <div className="pnl-col">
+                       <span className={`pnl-value ${participant.pnlPercentage >= 0 ? 'positive' : 'negative'}`}>
+                         {participant.pnlPercentage >= 0 ? '+' : ''}{participant.pnlPercentage.toFixed(2)}%
+                       </span>
+                       <span className="pnl-amount">
+                         ${participant.pnl >= 0 ? '+' : ''}{participant.pnl.toFixed(2)}
+                       </span>
+                     </div>
+                     <div className="value-col">
+                       <span className="portfolio-value">${participant.totalValue.toFixed(2)}</span>
+                     </div>
+                     <div className="trades-col">
+                       <span className="trades-count">{participant.trades}</span>
+                     </div>
+                     <div className="winrate-col">
+                       <span className="winrate-value">{participant.winRate.toFixed(1)}%</span>
+                     </div>
+                     <div className="grade-col">
+                       {participant.grade && (
+                         <span className={`grade-badge grade-${participant.grade.toLowerCase()}`}>
+                           {participant.grade}
+                         </span>
+                       )}
+                       {participant.profitScore && (
+                         <span className="profit-score">
+                           {participant.profitScore.toFixed(2)}x
+                         </span>
+                       )}
+                     </div>
+                   </div>
+                 ))}
+               </div>
+             </div>
+           ) : (
+             <div className="no-leaderboard">
+               <p>📊 No participant data available yet</p>
+               <p>Leaderboard will appear once trading begins</p>
+             </div>
+           )}
+         </div>
+       )}
      </div>
 
-     {/* Join Game Modal */}
      {isJoinModalOpen && provider && signer && walletAddress && chainId && (
        <JoinGameModal
          isOpen={isJoinModalOpen}

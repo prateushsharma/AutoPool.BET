@@ -66,7 +66,7 @@ export const getNativeCurrency = (chainId: string): string => {
     '0xaa36a7': 'ETH',
     '0x38': 'BNB',
     '0xfa': 'FTM',
-    '0xbe598': 'AVAX', // Dispatch uses AVAX
+    '0xbe598': 'DIS', // Dispatch uses AVAX
   };
   return currencies[chainId] || 'ETH';
 };

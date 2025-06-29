@@ -369,3 +369,52 @@
    font-size: 1.2rem;
  }
 }
+/* Add to existing JoinGameModal.css */
+
+.network-warning {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.network-warning h4 {
+  color: #f59e0b;
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+}
+
+.network-warning p {
+  color: #d1d5db;
+  font-size: 0.85rem;
+  margin: 0.5rem 0;
+}
+
+.network-warning code {
+  background: rgba(64, 64, 64, 0.5);
+  color: #22c55e;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 0.8rem;
+}
+
+.real-badge {
+  color: #22c55e;
+  font-weight: 600;
+}
+
+.demo-badge {
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+.bridge-info {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  text-align: center;
+  margin-top: 0.5rem;
+  padding: 0.25rem;
+}

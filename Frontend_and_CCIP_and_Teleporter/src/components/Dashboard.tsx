@@ -1,5 +1,5 @@
 // File: src/components/Dashboard.tsx
-// Dashboard Component for PulsePicksAI
+// Updated Dashboard Component for PulsePicksAI with Status Tabs and Leaderboards
 
 import React, { useState, useEffect } from 'react';
 import { createCompetition, getCompetitionCounter } from '../contracts/CompetitionFactory';
@@ -32,9 +32,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onBackToLanding }) => {
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [chainId, setChainId] = useState<string | null>(null);
   
-  // Real games data
+  // Real games data with tabs and leaderboards
   const [games, setGames] = useState<any[]>([]);
   const [loadingGames, setLoadingGames] = useState(true);
+  const [activeTab, setActiveTab] = useState<string>('all');
+  const [leaderboards, setLeaderboards] = useState<{[key: string]: any}>({});
   
   // AI Step 1 Form State
   const [aiForm, setAiForm] = useState({
@@ -71,33 +73,44 @@ const networks = [
   { name: 'Ethereum', chainId: '0x1', rpcUrl: 'https://mainnet.infura.io/v3/YOUR_KEY', emoji: '💎' },
   { name: 'Avalanche', chainId: '0xa86a', rpcUrl: 'https://api.avax.network/ext/bc/C/rpc', emoji: '⛰️' },
 ];
+
   // Check if wallet is already connected on component mount
   useEffect(() => {
     checkWalletConnection();
     setupEventListeners();
-    fetchActiveGames(); // Load real games
-  }, []);
+    fetchGamesByStatus(activeTab); // Load games based on active tab
+  }, [activeTab]);
 
-  // Fetch active games from API
-  const fetchActiveGames = async () => {
+  // Handle tab changes
+  const handleTabChange = (status: string) => {
+    setActiveTab(status);
+  };
+
+  // Fetch games by status from API
+  const fetchGamesByStatus = async (status: string) => {
     setLoadingGames(true);
     try {
-      console.log('Fetching active games...');
+      console.log(`Fetching ${status} games...`);
       
+      const requestBody = status === 'all' 
+        ? { limit: 50 } 
+        : { status: status, limit: 50 };
+
       const response = await fetch('http://localhost:5000/api/game/list-rounds', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          status: 'active',
-          limit: 20
-        })
+        body: JSON.stringify(requestBody)
       });
 
       const result = await response.json();
       
       if (result.success) {
-        setGames(result.rounds || []);
-        console.log('Loaded games:', result.rounds);
+        const gamesList = result.rounds || [];
+        setGames(gamesList);
+        console.log(`Loaded ${status} games:`, gamesList);
+        
+        // Fetch leaderboards for active/running/finished games
+        await fetchLeaderboardsForGames(gamesList);
       } else {
         console.error('Failed to load games:', result.error);
         setGames([]);
@@ -108,6 +121,37 @@ const networks = [
     } finally {
       setLoadingGames(false);
     }
+  };
+
+  // Fetch leaderboards for games that have them
+  const fetchLeaderboardsForGames = async (gamesList: any[]) => {
+    const newLeaderboards: {[key: string]: any} = {};
+    
+    for (const game of gamesList) {
+      // Only fetch leaderboard for games that have participants and are not waiting
+      if (game.status !== 'waiting' && game.currentParticipants > 0) {
+        try {
+          const response = await fetch('http://localhost:5000/api/game/get-enhanced-leaderboard', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              roundId: game.id,
+              limit: 5 // Top 5 for card display
+            })
+          });
+
+          const result = await response.json();
+          
+          if (result.success && result.leaderboard?.length > 0) {
+            newLeaderboards[game.id] = result.leaderboard;
+          }
+        } catch (error) {
+          console.error(`Error fetching leaderboard for ${game.id}:`, error);
+        }
+      }
+    }
+    
+    setLeaderboards(newLeaderboards);
   };
 
   // Navigate to game details
@@ -127,6 +171,7 @@ const networks = [
     switch (status.toLowerCase()) {
       case 'active': return '#22c55e';
       case 'waiting': return '#f59e0b';
+      case 'running': return '#3b82f6';
       case 'finished': return '#6b7280';
       default: return '#9ca3af';
     }
@@ -503,7 +548,7 @@ const networks = [
         Blockchain ID: ${competitionForm.competitionId}
         TX: ${result.txHash}`);
         closeCreateModal();
-        fetchActiveGames(); // Refresh games list
+        fetchGamesByStatus(activeTab); // Refresh games list
       } else {
         alert(`Failed to create competition: ${result.error}`);
       }
@@ -581,9 +626,43 @@ const networks = [
       
       <div className="dashboard-main">
         <div className="page-header">
-          <h2>Active Competitions</h2>
+          <h2>Trading Competitions</h2>
           <button className="create-competition-btn" onClick={handleCreateCompetition}>
             + Create Competition
+          </button>
+        </div>
+
+        {/* Status Tabs */}
+        <div className="status-tabs">
+          <button 
+            className={`tab-btn ${activeTab === 'all' ? 'active' : ''}`}
+            onClick={() => handleTabChange('all')}
+          >
+            🏠 All Rounds
+          </button>
+          <button 
+            className={`tab-btn ${activeTab === 'active' ? 'active' : ''}`}
+            onClick={() => handleTabChange('active')}
+          >
+            🔴 Active
+          </button>
+          <button 
+            className={`tab-btn ${activeTab === 'waiting' ? 'active' : ''}`}
+            onClick={() => handleTabChange('waiting')}
+          >
+            ⏳ Waiting
+          </button>
+          <button 
+            className={`tab-btn ${activeTab === 'running' ? 'active' : ''}`}
+            onClick={() => handleTabChange('running')}
+          >
+            🏃 Running
+          </button>
+          <button 
+            className={`tab-btn ${activeTab === 'finished' ? 'active' : ''}`}
+            onClick={() => handleTabChange('finished')}
+          >
+            ✅ Finished
           </button>
         </div>
         
@@ -591,7 +670,7 @@ const networks = [
           {loadingGames ? (
             <div className="loading-games">
               <div className="loading-spinner"></div>
-              <p>Loading active games...</p>
+              <p>Loading {activeTab} games...</p>
             </div>
           ) : games.length > 0 ? (
             games.map((game) => (
@@ -630,6 +709,44 @@ const networks = [
                     <span className="time-label">Start Time</span>
                     <span className="time-value">{formatTime(game.startTime)}</span>
                   </div>
+
+                  {/* Leaderboard Section */}
+                  {leaderboards[game.id] && leaderboards[game.id].length > 0 ? (
+                    <div className="leaderboard-section">
+                      <div className="leaderboard-header">
+                        <span className="leaderboard-title">🏆 Top Performers</span>
+                      </div>
+                      <div className="leaderboard-list">
+                        {leaderboards[game.id].slice(0, 3).map((participant: any, index: number) => (
+                          <div key={participant.walletAddress} className="leaderboard-item">
+                            <div className="rank-info">
+                              <span className="rank">#{participant.rank}</span>
+                              <span className="username">{participant.username}</span>
+                            </div>
+                            <div className="performance-info">
+                              <span className={`pnl ${participant.pnlPercentage >= 0 ? 'positive' : 'negative'}`}>
+                                {participant.pnlPercentage >= 0 ? '+' : ''}{participant.pnlPercentage.toFixed(2)}%
+                              </span>
+                              {participant.grade && (
+                                <span className="grade">{participant.grade}</span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      {leaderboards[game.id].length > 3 && (
+                        <div className="view-all-leaderboard">
+                          +{leaderboards[game.id].length - 3} more participants
+                        </div>
+                      )}
+                    </div>
+                  ) : game.status !== 'waiting' && game.currentParticipants > 0 ? (
+                    <div className="leaderboard-section">
+                      <div className="loading-leaderboard">
+                        <span>📊 Loading leaderboard...</span>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
                 <button 
                   className="join-btn"
@@ -638,20 +755,31 @@ const networks = [
                     handleGameClick(game.id);
                   }}
                 >
-                  View Details
+                  {game.status === 'waiting' ? 'Join Game' : 'View Details'}
                 </button>
               </div>
             ))
           ) : (
             <div className="no-games">
-              <h3>No Active Games</h3>
-              <p>Create your first AI competition to get started!</p>
-              <button 
-                className="create-first-game-btn" 
-                onClick={handleCreateCompetition}
-              >
-                🤖 Create First Game
-              </button>
+              <h3>No {activeTab === 'all' ? '' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Games</h3>
+              <p>
+                {activeTab === 'waiting' 
+                  ? 'No games waiting for participants at the moment.' 
+                  : activeTab === 'active' 
+                  ? 'No active games running right now.'
+                  : activeTab === 'finished'
+                  ? 'No completed games to display.'
+                  : 'Create your first AI competition to get started!'
+                }
+              </p>
+              {activeTab === 'all' && (
+                <button 
+                  className="create-first-game-btn" 
+                  onClick={handleCreateCompetition}
+                >
+                  🤖 Create First Game
+                </button>
+              )}
             </div>
           )}
         </div>
