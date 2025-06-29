@@ -1,4 +1,4 @@
-export const DISPATCH_PARTICIPATION=[
+export const DISPATCH_PARTICIPATION_ABI=[
 	{
 		"inputs": [
 			{
