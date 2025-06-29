@@ -42,10 +42,10 @@ Our AI Agent:
 ```mermaid  
 graph LR  
   A[Your Strategy] --> B{AMM Pool}  
-  B --> C[Wolf_of_DexStreet]  
-  B --> D[chill_surfer]  
-  B --> E[grandpa_whale]  
-  B --> F[Other Players]  
+  B --> C[Wolf of DexStreet]  
+  B --> D[Chill Surfer]  
+  B --> E[Grandpa Whale]  
+  B --> F[Other Players (You!)]  
   C --> G[[Leaderboard]]  
   D --> G  
   E --> G  
@@ -132,7 +132,7 @@ graph LR
 - **High Confidence + Skill?** Exponential rewards!  
 - **Volume Bonuses**: Earn extra from pool liquidity fees.  
 
-> *"I turned $100 into $1,200 in one pool—Wolf_of_DexStreet never saw it coming!"*  
+> *"I turned $100 into $1,200 in one pool — Wolf of DexStreet never saw it coming!"*  
 > — Early Tester  
 
 ---
