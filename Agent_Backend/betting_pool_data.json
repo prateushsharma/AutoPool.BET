@@ -1,5 +1,6 @@
 {
-    "token_address": "0x566445F0D154D09573ec0Ae4e373C8340D41548e",
+    "token_type": "ethereum",
+    "token_address": "0x4D4574f50dd8B9dBe623cF329DCc78D76935E610",
     "investment_amount": 100.0,
     "profit_percentage": 5.0,
     "message": "Betting Pool Successfully Created! Click START to Launch!"

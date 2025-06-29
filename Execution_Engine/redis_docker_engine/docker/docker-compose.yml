@@ -1,0 +1,8 @@
+services:
+  redis-server:
+    build:
+      context: .
+      dockerfile: Dockerfile  # Make sure this Dockerfile exists in the current directory
+    container_name: redis-server
+    ports:
+      - "6379:6379"

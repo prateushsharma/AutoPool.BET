@@ -36,6 +36,7 @@ async def find_boosted_tokens(request: QueryRequest):
 
     if investment_amount is None and profit_percentage is None:
         return {
+            "token_type": token_type,
             "token_address": None,
             "investment_amount": None,
             "profit_percentage": None,
@@ -43,6 +44,7 @@ async def find_boosted_tokens(request: QueryRequest):
         }
     elif investment_amount is None:
         return {
+            "token_type": token_type,
             "token_address": None,
             "investment_amount": None,
             "profit_percentage": profit_percentage,
@@ -50,6 +52,7 @@ async def find_boosted_tokens(request: QueryRequest):
         }
     elif profit_percentage is None:
         return {
+            "token_type": token_type,
             "token_address": None,
             "investment_amount": investment_amount,
             "profit_percentage": None,
@@ -60,6 +63,7 @@ async def find_boosted_tokens(request: QueryRequest):
     trending_token = await get_tokens(token_type)
 
     result = {
+        "token_type": token_type,
         "token_address": trending_token,
         "investment_amount": investment_amount,
         "profit_percentage": profit_percentage,
@@ -103,6 +107,20 @@ async def initialize_pool_database():
         "message": "Async database and table initialized successfully.",
         "start_time_path": start_time_path
     }
+
+class decisionModel(BaseModel):
+    wallet_address: str
+    decision: str
+
+@app.post("/decide")
+async def log_decision(request: decisionModel):
+    # Extract and print the fields
+    wallet_address = request.wallet_address
+    decision = request.decision
+    
+    print(f"📩 Received Decision:")
+    print(f"  Wallet: {wallet_address}")
+    print(f"  Action: {decision}")
 
 if __name__ == "__main__":
     import uvicorn

@@ -1,0 +1,25 @@
+requests
+redis
+fastapi
+uvicorn
+docker
+
+# Core Data Handling
+numpy
+pandas
+
+# Technical Analysis (for OHLCV calculations)
+ta
+pandas-ta
+
+# Data Fetching (if needed)
+yfinance
+ccxt
+requests
+
+# Utilities
+python-dotenv
+pytz
+python-dateutil
+groq
+psutil
