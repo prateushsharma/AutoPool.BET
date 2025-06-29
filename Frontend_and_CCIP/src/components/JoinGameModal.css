@@ -1,0 +1,371 @@
+/* File: src/components/JoinGameModal.css */
+/* Styling for Join Game Modal */
+
+.join-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.join-modal {
+  background: rgba(20, 20, 20, 0.98);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(64, 64, 64, 0.6);
+  border-radius: 16px;
+  padding: 2rem;
+  min-width: 500px;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(64, 64, 64, 0.3);
+}
+
+.modal-header h3 {
+  color: #ffffff;
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  transition: color 0.3s ease;
+}
+
+.close-btn:hover {
+  color: #ffffff;
+}
+
+/* Game Info Section */
+.game-info-section {
+  background: rgba(64, 64, 64, 0.2);
+  border: 1px solid rgba(64, 64, 64, 0.3);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.game-info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.game-info-item:last-child {
+  margin-bottom: 0;
+}
+
+.label {
+  color: #9ca3af;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.value {
+  color: #ffffff;
+  font-weight: 600;
+  text-align: right;
+}
+
+.value.mono {
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 0.85rem;
+}
+
+/* Form Styles */
+.join-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.form-input,
+.form-textarea {
+  background: rgba(64, 64, 64, 0.3);
+  border: 1px solid rgba(64, 64, 64, 0.5);
+  border-radius: 8px;
+  padding: 0.75rem;
+  color: #ffffff;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: rgba(156, 163, 175, 0.7);
+  background: rgba(64, 64, 64, 0.5);
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+  color: #9ca3af;
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.balance-info {
+  color: #9ca3af;
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+/* Slider Styles */
+.form-slider {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(64, 64, 64, 0.5);
+  outline: none;
+  cursor: pointer;
+}
+
+.form-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+  border: 2px solid #9ca3af;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.form-slider::-webkit-slider-thumb:hover {
+  background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+  border-color: #ffffff;
+}
+
+.slider-labels {
+  display: flex;
+  justify-content: space-between;
+  color: #9ca3af;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+
+/* Cost Breakdown */
+.cost-breakdown {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.cost-breakdown h4 {
+  color: #22c55e;
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem 0;
+}
+
+.loading-cost {
+  color: #9ca3af;
+  font-style: italic;
+  text-align: center;
+  padding: 0.5rem;
+}
+
+.cost-error {
+ color: #ef4444;
+ font-size: 0.9rem;
+ text-align: center;
+ padding: 0.5rem;
+}
+
+.cost-details {
+ display: flex;
+ flex-direction: column;
+ gap: 0.5rem;
+}
+
+.cost-item {
+ display: flex;
+ justify-content: space-between;
+ align-items: center;
+ padding: 0.25rem 0;
+ font-size: 0.9rem;
+}
+
+.cost-item span:first-child {
+ color: #d1d5db;
+}
+
+.cost-item span:last-child {
+ color: #ffffff;
+ font-weight: 500;
+}
+
+.cost-item.total {
+ border-top: 1px solid rgba(34, 197, 94, 0.3);
+ padding-top: 0.75rem;
+ margin-top: 0.5rem;
+ font-size: 1rem;
+}
+
+.cost-item.total span {
+ color: #22c55e;
+}
+
+.insufficient-balance {
+ background: rgba(239, 68, 68, 0.2);
+ color: #ef4444;
+ padding: 0.5rem;
+ border-radius: 6px;
+ text-align: center;
+ font-size: 0.85rem;
+ margin-top: 0.5rem;
+}
+
+/* Form Hints */
+.form-hint {
+ color: #9ca3af;
+ font-size: 0.8rem;
+ font-style: italic;
+}
+
+/* Messages */
+.error-message {
+ background: rgba(239, 68, 68, 0.2);
+ color: #ef4444;
+ padding: 0.75rem;
+ border-radius: 8px;
+ border: 1px solid rgba(239, 68, 68, 0.3);
+ font-size: 0.9rem;
+}
+
+.success-message {
+ background: rgba(34, 197, 94, 0.2);
+ color: #22c55e;
+ padding: 0.75rem;
+ border-radius: 8px;
+ border: 1px solid rgba(34, 197, 94, 0.3);
+ font-size: 0.9rem;
+ text-align: center;
+}
+
+/* Action Buttons */
+.form-actions {
+ display: flex;
+ gap: 1rem;
+ margin-top: 1rem;
+}
+
+.cancel-btn,
+.join-btn {
+ flex: 1;
+ padding: 0.75rem 1rem;
+ border-radius: 8px;
+ border: none;
+ cursor: pointer;
+ font-size: 0.95rem;
+ font-weight: 500;
+ transition: all 0.3s ease;
+}
+
+.cancel-btn {
+ background: rgba(64, 64, 64, 0.5);
+ color: #9ca3af;
+ border: 1px solid rgba(64, 64, 64, 0.6);
+}
+
+.cancel-btn:hover:not(:disabled) {
+ background: rgba(64, 64, 64, 0.7);
+ color: #ffffff;
+}
+
+.join-btn {
+ background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+ color: #ffffff;
+ border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.join-btn:hover:not(:disabled) {
+ background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+ border-color: rgba(34, 197, 94, 0.5);
+ transform: translateY(-1px);
+}
+
+.join-btn:disabled,
+.cancel-btn:disabled {
+ opacity: 0.6;
+ cursor: not-allowed;
+}
+
+.join-btn:disabled:hover,
+.cancel-btn:disabled:hover {
+ transform: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+ .join-modal {
+   min-width: 350px;
+   padding: 1.5rem;
+ }
+
+ .form-actions {
+   flex-direction: column;
+   gap: 0.75rem;
+ }
+
+ .game-info-item {
+   flex-direction: column;
+   align-items: flex-start;
+   gap: 0.25rem;
+ }
+
+ .value {
+   text-align: left;
+   max-width: 100%;
+ }
+}
+
+@media (max-width: 480px) {
+ .join-modal {
+   min-width: 300px;
+   padding: 1rem;
+ }
+
+ .modal-header h3 {
+   font-size: 1.2rem;
+ }
+}
