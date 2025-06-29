@@ -10,11 +10,15 @@ import datetime
 from data_fetch.get_boosted_tokens import get_tokens
 from betting_pool.query_classifier import classify_token_query
 from fastapi.middleware.cors import CORSMiddleware
+import requests
+from typing import Optional
 
 app = FastAPI()
 
 
 timer_active = False
+current_chain_id = None
+current_token_address = None
 
 # CORS Middleware
 app.add_middleware(
@@ -32,6 +36,8 @@ class QueryRequest(BaseModel):
 class BulkUserRequest(BaseModel):
     names: list[str]
     wallet_addresses: list[str]
+    chainId: str  # New field
+    tokenAddress: str  # New field
 
 class DecisionRequest(BaseModel):
     wallet_address: str
@@ -41,9 +47,47 @@ class DecisionRequest(BaseModel):
 timer_task = None
 
 # Utility Functions
-def get_random_price():
-    """Random token price between $0.01 and $100.00"""
-    return round(random.uniform(0.01, 100.0), 4)
+async def get_token_price(chain_id: str, token_address: str) -> float:
+    """Fetch real token price from DexScreener API"""
+    try:
+        url = f"https://api.dexscreener.com/token-pairs/v1/{chain_id}/{token_address}"
+        headers = {"Accept": "*/*"}
+        
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()  # Raises an exception for bad status codes
+        
+        data = response.json()
+        
+        if data and isinstance(data, list) and len(data) > 0:
+            pair = data[0]  # Get first pair
+            price_usd = pair.get("priceUsd")
+            
+            if price_usd and price_usd != "null":
+                return float(price_usd)
+            else:
+                print(f"⚠️ No valid priceUsd found for {token_address}, using fallback")
+                return get_fallback_price()
+        else:
+            print(f"⚠️ No pairs found for {token_address}, using fallback")
+            return get_fallback_price()
+            
+    except requests.exceptions.RequestException as e:
+        print(f"❌ API request failed: {str(e)}, using fallback")
+        return get_fallback_price()
+    except (ValueError, KeyError) as e:
+        print(f"❌ Price parsing failed: {str(e)}, using fallback")
+        return get_fallback_price()
+    except Exception as e:
+        print(f"❌ Unexpected error: {str(e)}, using fallback")
+        return get_fallback_price()
+
+
+def get_fallback_price() -> float:
+    """Fallback to random price if API fails"""
+    price = round(random.uniform(0.01, 100.0), 4)
+    print(f"🎲 Using fallback random price: ${price}")
+    return price
+
 
 # Database Functions
 async def initialize_trading_db():
@@ -218,10 +262,10 @@ async def update_leaderboard(liquidation_summary, session_id, current_price):
 # Timer Functions
 async def auto_stop_pool():
     """Auto-stop pool after 10 minutes"""
-    global timer_active
+    global timer_active, current_chain_id, current_token_address
     timer_active = True 
     print("🕐 Timer started: Pool will auto-stop in 10 minutes...")
-    await asyncio.sleep(600)  # 10 minutes
+    await asyncio.sleep(80)  # 80 seconds for testing (change to 600 for 10 minutes)
     
     try:
         trading_db_path = os.path.join("database", "trading.db")
@@ -233,7 +277,7 @@ async def auto_stop_pool():
                 
                 if result:
                     wallet_address = result[0]
-                    print(f"⏰ 10 minutes elapsed! Auto-stopping pool using wallet: {wallet_address}")
+                    print(f"⏰ Timer elapsed! Auto-stopping pool using wallet: {wallet_address}")
                     await process_stop_decision(wallet_address)
                 else:
                     print("⚠️ No trading positions found to trigger auto-stop")
@@ -244,11 +288,11 @@ async def auto_stop_pool():
         print(f"❌ Error in auto-stop: {str(e)}")
 
     finally:
-        timer_active = False  # Set to False when timer ends
+        timer_active = False
 
 async def process_stop_decision(wallet_address: str):
     """Process auto-stop decision - liquidates ALL users"""
-    global timer_active
+    global timer_active, current_chain_id, current_token_address
     try:
         await initialize_trading_db()
         trading_db_path = os.path.join("database", "trading.db")
@@ -267,13 +311,19 @@ async def process_stop_decision(wallet_address: str):
             # Clear previous liquidation results
             await db.execute("DELETE FROM liquidation_results")
             
-            # Get current token price
-            current_price = get_random_price()
+            # Get current token price from DexScreener
+            if current_chain_id and current_token_address:
+                current_price = await get_token_price(current_chain_id, current_token_address)
+                print(f"💰 Real liquidation price from DexScreener: ${current_price:.6f}")
+            else:
+                current_price = get_fallback_price()
+                print(f"💰 Fallback liquidation price: ${current_price:.6f}")
+            
             liquidation_summary = []
             
-            print(f"⏰ 10-MINUTE TIMER EXPIRED!")
+            print(f"⏰ TIMER EXPIRED!")
             print(f"🛑 AUTO-LIQUIDATING ALL USERS")
-            print(f"💰 Liquidation price: ${current_price:.4f}")
+            print(f"💰 Liquidation price: ${current_price:.6f}")
             print(f"👥 Processing {len(all_positions)} users...")
             print("=" * 60)
             
@@ -450,8 +500,9 @@ async def initialize_pool_database():
 async def add_users(request: BulkUserRequest):
     """
     WORKFLOW: Reset pool → Add users → Start timer → Open trading
+    Now requires chainId and tokenAddress for real price fetching
     """
-    global timer_task, timer_active
+    global timer_task, timer_active, current_chain_id, current_token_address
     
     # Validate input
     if len(request.names) != len(request.wallet_addresses):
@@ -463,8 +514,28 @@ async def add_users(request: BulkUserRequest):
     if len(request.names) == 0:
         raise HTTPException(status_code=400, detail="Empty lists provided. At least one user required.")
     
+    # Validate chainId and tokenAddress
+    if not request.chainId or not request.chainId.strip():
+        raise HTTPException(status_code=400, detail="chainId is required and cannot be empty.")
+    
+    if not request.tokenAddress or not request.tokenAddress.strip():
+        raise HTTPException(status_code=400, detail="tokenAddress is required and cannot be empty.")
+    
     print("🔄 STARTING NEW TRADING SESSION...")
     
+    # Store token info for this session
+    current_chain_id = request.chainId.strip()
+    current_token_address = request.tokenAddress.strip()
+    
+    print(f"🪙 Token Info: Chain {current_chain_id}, Address {current_token_address}")
+    
+    # Test price fetching
+    try:
+        test_price = await get_token_price(current_chain_id, current_token_address)
+        print(f"💰 Current token price: ${test_price:.6f}")
+    except Exception as e:
+        print(f"⚠️ Price fetch test failed: {str(e)}")
+
     # STEP 1: Reset pool
     print("1️⃣ Resetting trading pool...")
     if timer_task is not None:
@@ -637,7 +708,9 @@ async def get_all_users():
 
 @app.post("/decision")
 async def make_trading_decision(request: DecisionRequest):
-    """Execute trading decisions: buy, sell, or stop"""
+    """Execute trading decisions: buy, sell, or stop - now with real token prices"""
+    global current_chain_id, current_token_address
+    
     # Validate action
     if request.action.lower() not in ["buy", "sell", "stop"]:
         raise HTTPException(status_code=400, detail="Action must be 'buy', 'sell', or 'stop'")
@@ -702,7 +775,12 @@ async def make_trading_decision(request: DecisionRequest):
             original_investment = current_investment
             original_tokens = current_tokens
             original_trade_count = buy_sell_calls
-            current_price = get_random_price()
+            if current_chain_id and current_token_address:
+                current_price = await get_token_price(current_chain_id, current_token_address)
+                print(f"💰 Real-time price from DexScreener: ${current_price:.6f}")
+            else:
+                current_price = get_fallback_price()
+                print(f"💰 Using fallback price: ${current_price:.6f}")
             
             if action == "buy":
                 if current_investment <= 0:
@@ -923,7 +1001,9 @@ async def make_trading_decision(request: DecisionRequest):
 
 @app.get("/all_positions")
 async def get_all_positions():
-    """Get all user trading positions with profit/loss calculations"""
+    """Get all user trading positions with profit/loss calculations - using real token prices"""
+    global current_chain_id, current_token_address
+    
     try:
         os.makedirs("database", exist_ok=True)
         trading_db_path = os.path.join("database", "trading.db")
@@ -968,7 +1048,18 @@ async def get_all_positions():
                 starting_investment = row[1]
                 
                 # Calculate token value
-                current_price = get_random_price()
+            if current_chain_id and current_token_address:
+                current_price = await get_token_price(current_chain_id, current_token_address)
+            else:
+                current_price = get_fallback_price()
+            
+            positions = []
+            for row in rows:
+                current_cash = row[2]
+                current_token_count = row[3]
+                starting_investment = row[1]
+                
+                # Calculate token value using real price
                 token_value = current_token_count * current_price
                 total_current_value = current_cash + token_value
                 
@@ -986,7 +1077,8 @@ async def get_all_positions():
                     "current_token_value": token_value,
                     "total_current_value": total_current_value,
                     "profit_loss": profit_loss,
-                    "profit_loss_percentage": round(profit_loss_percentage, 2)
+                    "profit_loss_percentage": round(profit_loss_percentage, 2),
+                    "current_token_price": current_price  # Add current price to response
                 })
             
             # Get pool status
