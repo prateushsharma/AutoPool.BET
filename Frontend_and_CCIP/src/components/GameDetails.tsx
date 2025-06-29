@@ -5,6 +5,13 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import './GameDetails.css';
 
+// Declare ethereum type for TypeScript
+declare global {
+  interface Window {
+    ethereum?: any;
+  }
+}
+
 interface GameDetailsData {
   id: string;
   title: string;
@@ -43,12 +50,234 @@ const GameDetails: React.FC = () => {
   const [gameData, setGameData] = useState<GameDetailsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Wallet and Network State (same as Dashboard)
+  const [isNetworkModalOpen, setIsNetworkModalOpen] = useState(false);
+  const [connectedWallet, setConnectedWallet] = useState<string | null>(null);
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [isSwitchingNetwork, setIsSwitchingNetwork] = useState(false);
+  const [chainId, setChainId] = useState<string | null>(null);
+
+  const networks = [
+    { name: 'Avalanche Fuji', chainId: '0xa869', rpcUrl: 'https://api.avax-test.network/ext/bc/C/rpc', emoji: '🔺' },
+    { name: 'Ethereum Sepolia', chainId: '0xaa36a7', rpcUrl: 'https://sepolia.infura.io/v3/YOUR_KEY', emoji: '🔷' },
+    { name: 'Base', chainId: '0x2105', rpcUrl: 'https://mainnet.base.org', emoji: '🔵' },
+    { name: 'Arbitrum', chainId: '0xa4b1', rpcUrl: 'https://arb1.arbitrum.io/rpc', emoji: '🔷' },
+    { name: 'Polygon', chainId: '0x89', rpcUrl: 'https://polygon-rpc.com', emoji: '🟣' },
+    { name: 'Optimism', chainId: '0xa', rpcUrl: 'https://mainnet.optimism.io', emoji: '🔴' },
+    { name: 'Ethereum', chainId: '0x1', rpcUrl: 'https://mainnet.infura.io/v3/YOUR_KEY', emoji: '💎' },
+    { name: 'Avalanche', chainId: '0xa86a', rpcUrl: 'https://api.avax.network/ext/bc/C/rpc', emoji: '⛰️' },
+  ];
 
   useEffect(() => {
     if (roundId) {
       fetchGameDetails(roundId);
     }
+    // Check wallet connection
+    checkWalletConnection();
+    setupEventListeners();
   }, [roundId]);
+
+  // Wallet Functions (same as Dashboard)
+  const checkWalletConnection = async () => {
+    if (typeof window.ethereum !== 'undefined') {
+      try {
+        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+        if (accounts.length > 0) {
+          setConnectedWallet('MetaMask');
+          setWalletAddress(accounts[0]);
+          
+          // Get chain ID
+          const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+          setChainId(chainId);
+        }
+      } catch (error) {
+        console.error('Error checking wallet connection:', error);
+      }
+    }
+  };
+
+  const setupEventListeners = () => {
+    if (typeof window.ethereum !== 'undefined') {
+      // Listen for account changes
+      window.ethereum.on('accountsChanged', (accounts: string[]) => {
+        if (accounts.length === 0) {
+          setConnectedWallet(null);
+          setWalletAddress(null);
+          setChainId(null);
+        } else {
+          setWalletAddress(accounts[0]);
+        }
+      });
+
+      // Listen for chain changes
+      window.ethereum.on('chainChanged', (chainId: string) => {
+        setChainId(chainId);
+        window.location.reload();
+      });
+    }
+  };
+
+  const connectMetaMask = async () => {
+    if (typeof window.ethereum === 'undefined') {
+      alert('MetaMask is not installed. Please install MetaMask and try again.');
+      return;
+    }
+
+    setIsConnecting(true);
+    try {
+      const accounts = await window.ethereum.request({
+        method: 'eth_requestAccounts',
+      });
+
+      if (accounts.length > 0) {
+        setConnectedWallet('MetaMask');
+        setWalletAddress(accounts[0]);
+        
+        const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+        setChainId(chainId);
+      }
+    } catch (error: any) {
+      console.error('Error connecting to MetaMask:', error);
+      if (error.code === 4001) {
+        alert('Please connect to MetaMask to continue.');
+      } else {
+        alert('Failed to connect to MetaMask. Please try again.');
+      }
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  const getChainName = (chainId: string) => {
+    const chains: { [key: string]: string } = {
+      '0x1': 'Ethereum',
+      '0x89': 'Polygon',
+      '0xa86a': 'Avalanche',
+      '0xa4b1': 'Arbitrum',
+      '0x2105': 'Base',
+      '0xa': 'Optimism',
+      '0xaa36a7': 'Sepolia',
+      '0xa869': 'Avalanche Fuji',
+      '0x38': 'BSC',
+      '0xfa': 'Fantom',
+    };
+    return chains[chainId] || `Chain ${chainId}`;
+  };
+
+  const switchNetwork = async (targetChainId: string, rpcUrl: string, networkName: string) => {
+    if (!window.ethereum) {
+      alert('MetaMask is not installed');
+      return;
+    }
+
+    setIsSwitchingNetwork(true);
+    try {
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: targetChainId }],
+      });
+    } catch (switchError: any) {
+      if (switchError.code === 4902) {
+        try {
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [
+              {
+                chainId: targetChainId,
+                chainName: networkName,
+                rpcUrls: [rpcUrl],
+                nativeCurrency: getNetworkCurrency(targetChainId),
+                blockExplorerUrls: getBlockExplorer(targetChainId),
+              },
+            ],
+          });
+        } catch (addError) {
+          console.error('Error adding network:', addError);
+          alert('Failed to add network to MetaMask');
+        }
+      } else {
+        console.error('Error switching network:', switchError);
+        alert('Failed to switch network');
+      }
+    } finally {
+      setIsSwitchingNetwork(false);
+      setIsNetworkModalOpen(false);
+    }
+  };
+
+  const getNetworkCurrency = (chainId: string) => {
+    const currencies: { [key: string]: any } = {
+      '0x1': { name: 'Ether', symbol: 'ETH', decimals: 18 },
+      '0x89': { name: 'Polygon', symbol: 'MATIC', decimals: 18 },
+      '0xa86a': { name: 'Avalanche', symbol: 'AVAX', decimals: 18 },
+      '0xa869': { name: 'Avalanche', symbol: 'AVAX', decimals: 18 },
+      '0xa4b1': { name: 'Ether', symbol: 'ETH', decimals: 18 },
+      '0x2105': { name: 'Ether', symbol: 'ETH', decimals: 18 },
+      '0xa': { name: 'Ether', symbol: 'ETH', decimals: 18 },
+      '0xaa36a7': { name: 'Ether', symbol: 'ETH', decimals: 18 },
+    };
+    return currencies[chainId] || { name: 'Ether', symbol: 'ETH', decimals: 18 };
+  };
+
+  const getBlockExplorer = (chainId: string) => {
+    const explorers: { [key: string]: string[] } = {
+      '0x1': ['https://etherscan.io'],
+      '0x89': ['https://polygonscan.com'],
+      '0xa86a': ['https://snowtrace.io'],
+      '0xa869': ['https://testnet.snowtrace.io'],
+      '0xa4b1': ['https://arbiscan.io'],
+      '0x2105': ['https://basescan.org'],
+      '0xa': ['https://optimistic.etherscan.io'],
+      '0xaa36a7': ['https://sepolia.etherscan.io'],
+    };
+    return explorers[chainId] || ['https://etherscan.io'];
+  };
+
+  const formatAddress = (address: string) => {
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
+
+  const handleWalletConnect = () => {
+    if (connectedWallet) {
+      setConnectedWallet(null);
+      setWalletAddress(null);
+      setChainId(null);
+    } else {
+      connectMetaMask();
+    }
+  };
+
+  const handleNetworkSwitch = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!connectedWallet) {
+      alert('Please connect your wallet first');
+      return;
+    }
+    setIsNetworkModalOpen(!isNetworkModalOpen);
+  };
+
+  const closeNetworkModal = () => {
+    setIsNetworkModalOpen(false);
+  };
+
+  // Close network modal when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (isNetworkModalOpen) {
+        setIsNetworkModalOpen(false);
+      }
+    };
+
+    if (isNetworkModalOpen) {
+      document.addEventListener('click', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [isNetworkModalOpen]);
 
   const fetchGameDetails = async (roundId: string) => {
     setLoading(true);
@@ -153,10 +382,70 @@ const GameDetails: React.FC = () => {
 
   return (
     <div className="game-details-container">
+      {/* Dashboard Header */}
+      <div className="dashboard-header">
+        <div className="header-left">
+          <h1 className="dashboard-title">PulsePicksAI</h1>
+          <span className="dashboard-subtitle">AI Strategy Betting Protocol</span>
+        </div>
+        <div className="header-right">
+          <button className="wallet-btn" onClick={handleWalletConnect}>
+            {connectedWallet ? (
+              <div className="wallet-connected">
+                <span className="wallet-status">
+                  {connectedWallet} • {chainId ? getChainName(chainId) : 'Unknown'}
+                </span>
+                <span className="wallet-address">
+                  {walletAddress ? formatAddress(walletAddress) : ''}
+                </span>
+              </div>
+            ) : (
+              'Connect Wallet'
+            )}
+          </button>
+          
+          {connectedWallet && (
+            <div className="network-dropdown">
+              <button className="network-btn" onClick={handleNetworkSwitch}>
+                <span className="network-icon">⚡</span>
+                <span className="network-text">Network</span>
+              </button>
+              
+              {isNetworkModalOpen && (
+                <div className="network-popup">
+                  <div className="network-popup-header">
+                    <span>Select Network</span>
+                    <button className="close-btn-small" onClick={closeNetworkModal}>×</button>
+                  </div>
+                  <div className="network-list">
+                    {networks.map((network) => (
+                      <button
+                        key={network.chainId}
+                        className={`network-item ${chainId === network.chainId ? 'current' : ''}`}
+                        onClick={() => switchNetwork(network.chainId, network.rpcUrl, network.name)}
+                        disabled={isSwitchingNetwork || chainId === network.chainId}
+                      >
+                        <span className="network-emoji">{network.emoji}</span>
+                        <span className="network-name">{network.name}</span>
+                        {chainId === network.chainId && (
+                          <span className="current-badge">✓</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          
+          <button className="back-btn" onClick={handleBackToDashboard}>
+            ← Back to Dashboard
+          </button>
+        </div>
+      </div>
+
+      {/* Game Details Header */}
       <div className="game-details-header">
-        <button className="back-btn" onClick={handleBackToDashboard}>
-          ← Back to Dashboard
-        </button>
         <div className="header-info">
           <h1 className="game-title">{gameData.title}</h1>
           <div className="status-badge" style={{ backgroundColor: getStatusColor(gameData.status) }}>
