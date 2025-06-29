@@ -97,7 +97,7 @@ graph LR
 ## 🚀 Get Started in 30 Seconds  
 ### **No Code. No Hassle. Just Talk!**  
 
-1. **Open Telegram** → Chat with [@AutoPoolBetBot](https://t.me/AutoPoolBetBot)  
+1. **Open Telegram** → Chat with [@AutoPoolBetBot](https://t.me/AutoPoolBET_bot)  
 2. **Type Your Idea** → Plain English works!  
 
    > *Example:*  
@@ -148,7 +148,7 @@ graph LR
 
 ## 🌟 Join the Revolution!  
 **Ready to battle?**  
-👉 [app.autopool.bet](https://app.autopool.bet)  
+👉 [app.autopool.bet]([https://app.autopool.bet](https://pulse-picks-ai.vercel.app/))  
 ---
 
 > ⚠️ **Disclaimer**: *High-risk crypto activity. Use testnet funds first. DYOR.*  
