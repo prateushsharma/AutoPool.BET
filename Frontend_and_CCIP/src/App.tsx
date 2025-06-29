@@ -1,36 +1,18 @@
 // File: src/App.tsx
-// PulsePicksAI Landing Page Component
+// PulsePicksAI Main App Component with React Router
 
-import React, { useState } from 'react';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import Dashboard from './components/Dashboard';
 import './App.css';
 
-const App: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState<'landing' | 'dashboard'>('landing');
+// Landing Page Component
+const LandingPage: React.FC = () => {
+  const navigate = useNavigate();
 
   const handleLaunchDApp = () => {
-    setCurrentPage('dashboard');
+    navigate('/home');
   };
-
-  const handleBackToLanding = () => {
-    setCurrentPage('landing');
-  };
-
-  if (currentPage === 'dashboard') {
-    return (
-      <div className="dashboard-container">
-        <div className="dashboard-header">
-          <button className="back-btn" onClick={handleBackToLanding}>
-            ← Back to Landing
-          </button>
-          <h1>PulsePicksAI Dashboard</h1>
-        </div>
-        <div className="dashboard-content">
-          <h2>Dashboard Coming Soon...</h2>
-          <p>This will be the main dashboard with betting pools</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="landing-container">
@@ -71,6 +53,31 @@ const App: React.FC = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+// Dashboard Wrapper Component
+const DashboardPage: React.FC = () => {
+  const navigate = useNavigate();
+
+  const handleBackToLanding = () => {
+    navigate('/');
+  };
+
+  return <Dashboard onBackToLanding={handleBackToLanding} />;
+};
+
+// Main App Component with Router
+const App: React.FC = () => {
+  return (
+    <Router>
+      <div className="app">
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/home" element={<DashboardPage />} />
+        </Routes>
+      </div>
+    </Router>
   );
 };
 
