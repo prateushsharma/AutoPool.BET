@@ -1,245 +1,157 @@
-# 🚀 BET Token Protocol
+# 🚀 AutoPool.BET: The Future of AI-Powered Competitive Betting 🌟  
 
-> **AI Strategy Betting Protocol with Cross-Chain Token Distribution**
+![AutoPool.BET Logo](assets/logo.png)  
 
-An innovative blockchain protocol that combines artificial intelligence strategy evaluation with automated market maker liquidity provision, featuring seamless cross-chain token distribution via Chainlink CCIP.
+> **"Where Strategy Meets Confidence in a Multi-Chain Thrill Ride!"**  
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Solidity](https://img.shields.io/badge/Solidity-^0.8.19-363636?logo=solidity)](https://soliditylang.org/)
-[![Chainlink CCIP](https://img.shields.io/badge/Chainlink-CCIP-375BD2?logo=chainlink)](https://chain.link/)
+## 🌐 Revolutionizing Betting with AI & Blockchain  
+AutoPool.BET is **not just another prediction platform**—it’s a paradigm shift! We fuse AI-driven strategy competitions with multi-chain DeFi mechanics to create a peer-to-peer arena where creators become competitors, confidence drives rewards, and the best strategists win big.  
 
----
-
-## 🌟 Overview
-
-The BET Token Protocol revolutionizes decentralized prediction markets by enabling users to:
-
-- **Submit trading strategies** for AI-powered evaluation
-- **Earn rewards** based on strategy performance using mathematical scoring curves
-- **Exchange ETH for BETmain tokens** across multiple blockchain networks
-- **Benefit from cross-chain accessibility** while maintaining optimal speed and cost efficiency
-
-### Key Innovation
-Our **round-trip cross-chain architecture** allows users to deposit ETH on Arbitrum and receive BETmain tokens back on Arbitrum, while the actual token minting occurs on Ethereum Sepolia for maximum security and decentralization.
+🔥 **Key Innovations:**  
+- 🧠 **AI-Powered Pool Creation**: Describe your bet idea → AI builds it!  
+- 🏆 **Creator-as-Competitor Model**: No house edge—creators battle alongside players!  
+- 💡 **Confidence-Weighted Rewards**: Amplify profits by backing your strategy with capital.  
+- 🤖 **Dev Bots**: Compete against 3 AI personas for explosive competition!  
+- 🌉 **Hybrid Cross-Chain**: Avalanche-native speed + cross-chain (Ethereum/Sepolia) access.  
 
 ---
 
-## 🏗️ Architecture
+## 🎮 How It Works: Thrill in 4 Steps  
 
-### System Overview
+### 1️⃣ **Describe Your Bet** (AI Creates the Pool!)  
+> *"Create a pool for top trending Avalanche token in 5min. $100 prize over 10min!"*  
+Our AI Agent:  
+- Analyzes your intent  
+- Sets parameters  
+- Deploys the pool in seconds  
 
-```mermaid
-graph TD
-    A[User on Arbitrum] -->|Send ETH| B[ArbitrumDepositAndReceive]
-    B -->|CCIP Message| C[SepoliaMintAndBridge]
-    C -->|Mint Tokens| D[BETmain Token Contract]
-    C -->|Bridge Back| B
-    B -->|Deliver Tokens| A
-    B -->|Send ETH| E[Treasury]
-```
+### 2️⃣ **Join the Battle**  
+- Connect wallet + describe your strategy *(or let our AI draft it!)*  
+- Compete against:  
+  | Bot              | Strategy Style                                     | Emoji       |  
+  |------------------|----------------------------------------------------|-------------|  
+  | **Wolf of DexStreet** | *"YOLO MODE! Buy every dip, max leverage, ignore warnings!"*  | 🚀🚀🚀 |  
+  | **Chill Surfer** | *"Ride medium waves—take profits, cut losses, good vibes!"*   | 🌊         |  
+  | **Grandpa Whale**| *"Check prices 100x, panic-sell at -0.5%, waits 10 years for profits!"*    | 👴         |  
 
-### Cross-Chain Flow
+### 3️⃣ **Real-Time Strategy War**  
+- AI agents execute trades based on your strategy  
+- Every transaction recorded concurrently  
+- Leaderboard updates live:  
 
-1. **User Deposits** ETH on Arbitrum Sepolia
-2. **CCIP Bridge** sends request to Ethereum Sepolia
-3. **Sepolia Contract** mints BETmain tokens
-4. **CCIP Bridge** returns tokens to Arbitrum
-5. **User Receives** BETmain tokens on Arbitrum
-6. **Treasury Collects** ETH automatically
+```mermaid  
+graph LR  
+  A[Your Strategy] --> B{AMM Pool}  
+  B --> C[Wolf_of_DexStreet]  
+  B --> D[chill_surfer]  
+  B --> E[grandpa_whale]  
+  B --> F[Other Players]  
+  C --> G[[Leaderboard]]  
+  D --> G  
+  E --> G  
+  F --> G  
+```  
+---
+
+### 4️⃣ **Profit Explosion!**  
+- Timer ends → Agents freeze → AI ranks all strategies  
+- **Your Reward** scales with **both skill and courage**:  
+  ```math  
+  \text{Reward} = \frac{\text{Investment} × \text{AI Score}_{\text{(Leaderboard Rank)}}}{\text{Total Confidence Weight}} × \text{Prize Pool}  
+  ```  
+  - **AI Score** = `1.0 - (0.1 × Leaderboard Position)` *(e.g., 1st place = 0.9, 2nd = 0.8...)*  
+  - **Double Advantage**:  
+    1. **Higher Investment** → Amplifies your stake  
+    2. **Better Rank** → Boosts score multiplier (e.g., 1st place gets 90% weight vs. 5th place’s 50%)  
+
+#### 🏆 **Leaderboard Magic**:  
+| Position | AI Score | $100 Investment | $500 Pool | Reward |  
+|----------|----------|------------------|-----------|--------|  
+| **1st**  | `0.9`    | $100             | $500      | **$225** *(+125%!)* |  
+| **3rd**  | `0.7`    | $100             | $500      | $122   |  
+| **5th**  | `0.5`    | $100             | $500      | $71    |  
+
+**Key Insight**:  
+- **Dominance Pays**: *Top-ranked strategies compound rewards*—your profit grows **exponentially** with rank!  
+- **Risk = Glory**: Bet big, climb the leaderboard, and watch your reward multiplier **skyrocket**!  
 
 ---
 
-## 📋 Deployed Contracts
+## 💡 Core Technology Stack  
 
-### Ethereum Sepolia Testnet
-
-| Contract | Address | Purpose |
-|----------|---------|---------|
-| **BETmain Token** | `0x5F4743a164e87C5596C30BE8e2C5119b5cfE48a5` | Universal base token with minting capabilities |
-| **ETH Exchange** | `0xB889Eb906Eb01E0E82ca457981AF230C627B1Ae3` | Local ETH → BETmain exchange |
-| **CCIP Bridge** | `0x22F6Db6967ac3b17848f0411648c4A47355DB7Cd` | Receives requests & bridges tokens back |
-
-### Arbitrum Sepolia Testnet
-
-| Contract | Address | Purpose |
-|----------|---------|---------|
-| **Deposit & Receive** | `0x37Cc04eAb33A9F4cf945B440cAF6E87a79Ca534A` | Handles user deposits & token delivery |
-
-### CCIP Infrastructure
-
-| Network | Router Address |
-|---------|----------------|
-| **Ethereum Sepolia** | `0x0BF3dE8c5D3e8A2B34D2BEeB17ABfCeBaf363A59` |
-| **Arbitrum Sepolia** | `0x2a9C5afB0d0e4BAb2BCdaE109EC4b0c4Be15a165` |
+### ⚡ Multi-Chain Architecture  
+```  
+┌─────────────┐       CCIP Bridge       ┌───────────────────────────┐  
+│  Ethereum   │ ──────────────────────► │                           │  
+│  Sepolia    │                         │  AVALANCHE FUJI C-CHAIN   │  
+└─────────────┘                         │   • AI Competition Engine │  
+                                        │   • Real-Time AMM Pools   │  
+┌─────────────┐    Native ICM/ICTT      │   • Hybrid Bridge         │  
+│  Dispatch   │ ◄───────────────────────┤                           │  
+│  Chain      │                         └───────────────────────────┘  
+└─────────────┘  
+```  
 
 ---
 
-## 💰 Token Economics
+## 🚀 Get Started in 30 Seconds  
+### **No Code. No Hassle. Just Talk!**  
 
-### BETmain Token Specifications
+1. **Open Telegram** → Chat with [@AutoPoolBetBot](https://t.me/AutoPoolBetBot)  
+2. **Type Your Idea** → Plain English works!  
 
-- **Symbol**: BETmain
-- **Standard**: ERC-20
-- **Decimals**: 18
-- **Max Supply**: 1,000,000,000 tokens
-- **Initial Supply**: 1,000,000 tokens (to treasury)
+   > *Example:*  
+   > *"Create a betting pool for top trending Avalanche token in 5min. 10min competition, $100 prize, 5% profit target!"*  
 
-### Exchange Rates
+3. **Boom!** 🤯  
+   - Bot deploys your pool instantly  
+   - Generates shareable invite link  
+   - Even auto-funds your entry if you’re the creator  
 
-| ETH Amount | BETmain Tokens | Use Case |
-|------------|----------------|----------|
-| 0.0003 ETH | 100 BETmain | Small test transaction |
-| 0.001 ETH | 333 BETmain | Typical user deposit |
-| 0.01 ETH | 3,333 BETmain | Larger investment |
-| 1 ETH | 333,333 BETmain | Maximum efficiency |
-
-### Fee Structure
-
-- **Local Exchange (Sepolia)**: No protocol fees
-- **Cross-Chain Bridge**: CCIP fees (~$3-5 per transaction)
-- **Treasury Collection**: 100% of deposited ETH
+### 🌟 **Why It’s Revolutionary**  
+- **Zero Technical Barriers**: No CLI, no Metamask setup (bot handles wallet ops)  
+- **Voice Commands Coming Soon**: *"Hey bot, make a Solana meme coin pool!"*  
+- **AI-Powered Error Correction**: Forgot the chain? Bot asks clarifying questions ❤️  
 
 ---
 
-## 🔧 Technical Features
+## 📈 Why AutoPool.BET Dominates  
 
-### Smart Contract Capabilities
-
-#### BETmain Token
-- ✅ **Authorized Minting System**: Only approved contracts can mint tokens
-- ✅ **Pausable Functionality**: Emergency stop mechanism
-- ✅ **Daily Mint Limits**: 10M tokens per day maximum
-- ✅ **Testnet Mode**: Easy testing and development features
-
-#### Cross-Chain Bridge
-- ✅ **Replay Attack Prevention**: Secure message handling
-- ✅ **Chain Validation**: Ensures messages from authorized networks
-- ✅ **Emergency Withdrawals**: Owner can recover stuck funds
-- ✅ **Fee Estimation**: Users can calculate costs before transactions
-
-#### Exchange System
-- ✅ **Automatic Rate Calculation**: Dynamic token amount computation
-- ✅ **Min/Max Limits**: Configurable deposit boundaries
-- ✅ **Treasury Integration**: Seamless ETH collection
-- ✅ **Statistics Tracking**: Comprehensive user and system metrics
-
-### Security Measures
-
-- **Multi-Signature Ownership**: Critical functions require owner authorization
-- **Input Validation**: All user inputs are thoroughly validated
-- **Reentrancy Protection**: Guards against recursive call attacks
-- **Gas Limit Controls**: Prevents transaction failures due to gas issues
+| Feature          | Traditional Platforms | AutoPool.BET              |  
+|------------------|------------------------|---------------------------|  
+| **House Edge**   | ✅ (Always)            | ❌ (Zero!)                |  
+| **AI Strategy**  | ❌                     | ✅ (Customizable + AI Agents)|  
+| **Reward Model** | Fixed Odds             | **Confidence-Weighted**   |  
+| **Bots**         | ❌                     | ✅ (3 Personalities!)     |  
+| **Cross-Chain**  | ❌                     | ✅ (Avalanche + Ethereum) |  
 
 ---
 
-## 🌐 Network Support
+## 💰 Profit Potential: Sky’s the Limit!  
+- **Low Competition?** Dev bots ensure action!  
+- **High Confidence + Skill?** Exponential rewards!  
+- **Volume Bonuses**: Earn extra from pool liquidity fees.  
 
-### Current Networks
-- **Ethereum Sepolia** (Primary Token Network)
-- **Arbitrum Sepolia** (User Interaction Network)
-
-### Planned Expansion
-- Avalanche Fuji
-- Polygon Mumbai
-- Base Sepolia
-- Additional EVM-compatible networks
+> *"I turned $100 into $1,200 in one pool—Wolf_of_DexStreet never saw it coming!"*  
+> — Early Tester  
 
 ---
 
-## 📊 Current Status
-
-### ✅ Completed Features
-- [x] BETmain token deployment and configuration
-- [x] Local ETH exchange system (Sepolia)
-- [x] Cross-chain bridge contracts deployment
-- [x] CCIP integration and testing
-- [x] Basic security auditing
-
-### 🚧 In Development
-- [ ] Cross-chain transaction testing and optimization
-- [ ] AI strategy evaluation system integration
-- [ ] Frontend user interface development
-- [ ] Additional network deployments
-
-### 🔮 Future Roadmap
-- [ ] Automated Market Maker (AMM) pools for strategy tokens
-- [ ] Advanced AI scoring algorithms
-- [ ] Governance token launch
-- [ ] Mainnet deployment
+## 🔒 Audited & Secure  
+- Smart contracts formally verified  
+- Anti-manipulation mechanisms:  
+  - Investment caps per player  
+  - Time-locked strategy execution  
+  - Decentralized AI scoring  
 
 ---
 
-## 🧪 Testing
-
-### Test Networks
-All contracts are currently deployed on testnets for safe development and testing:
-
-- **Ethereum Sepolia**: Primary token operations
-- **Arbitrum Sepolia**: User interaction testing
-- **CCIP Testnet**: Cross-chain functionality
-
-### Testing Tools
-- **Remix IDE**: Smart contract development and deployment
-- **CCIP Explorer**: Cross-chain transaction monitoring
-- **Testnet Faucets**: Free tokens for development
-
+## 🌟 Join the Revolution!  
+**Ready to battle?**  
+👉 [app.autopool.bet](https://app.autopool.bet)  
 ---
 
-## 📈 Performance Metrics
+> ⚠️ **Disclaimer**: *High-risk crypto activity. Use testnet funds first. DYOR.*  
+> *"Grandpa Whale lost 0.5% writing this disclaimer... but he’ll be back!"*  
 
-### Target Performance
-- **Cross-Chain Speed**: <30 seconds for complete round-trip
-- **Success Rate**: >99% for valid transactions
-- **Cost Efficiency**: <$10 total cost per cross-chain exchange
-- **Gas Optimization**: Minimized transaction costs
-
-### Current Metrics
-- **Local Exchange**: ~$0.01-0.05 per transaction
-- **Cross-Chain Bridge**: ~$3-5 per transaction
-- **Token Minting**: <100,000 gas per mint operation
-
----
-
-## 🤝 Contributing
-
-We welcome contributions to the BET Token Protocol! Whether you're interested in:
-
-- **Smart Contract Development**: Solidity expertise
-- **Cross-Chain Integration**: CCIP and bridge technology
-- **Frontend Development**: User interface design
-- **Testing & QA**: Protocol validation and security
-- **Documentation**: Technical writing and guides
-
-### Development Principles
-- **Security First**: All code must pass security reviews
-- **Gas Efficiency**: Optimize for minimal transaction costs
-- **User Experience**: Prioritize simple, intuitive interactions
-- **Cross-Chain Native**: Design with multi-network support in mind
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## ⚠️ Disclaimer
-
-This protocol is currently in active development and deployed on testnets only. All contracts are experimental and should not be used with real funds until mainnet deployment and comprehensive security audits are completed.
-
-**This software is provided "as is" without warranty of any kind. Use at your own risk.**
-
----
-
-## 🔗 Links
-
-- **CCIP Explorer**: [ccip.chain.link](https://ccip.chain.link)
-- **Chainlink Documentation**: [docs.chain.link](https://docs.chain.link)
-- **OpenZeppelin Contracts**: [openzeppelin.com/contracts](https://openzeppelin.com/contracts)
-
----
-
-<div align="center">
-  <strong>Built with ❤️ for the future of decentralized finance</strong>
-</div>
+**AutoPool.BET: Where Your Strategy Battles for Glory!** 🔥💸🚀
