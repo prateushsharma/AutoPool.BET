@@ -1,5 +1,5 @@
-// File: src/utils/networkUtils.ts
-// Network utilities for cross-chain operations
+// File: src/utils/networkUtils.ts (Updated)
+// Updated with REAL Dispatch Chain configuration
 
 export const getNetworkShortName = (chainId: string): string => {
   const networks: { [key: string]: string } = {
@@ -13,6 +13,7 @@ export const getNetworkShortName = (chainId: string): string => {
     '0xaa36a7': 'sep',
     '0x38': 'bsc',
     '0xfa': 'ftm',
+    '0xbe598': 'dispatch', // REAL Dispatch Chain ID: 779672 (0xbe598)
   };
   return networks[chainId] || 'unknown';
 };
@@ -34,7 +35,7 @@ export const getParticipationContractType = (chainId: string): 'native' | 'sepol
       return 'native';
     case '0xaa36a7': // Ethereum Sepolia  
       return 'sepolia';
-    case '0x...': // Dispatch Chain (when deployed)
+    case '0xbe598': // Dispatch L1 Testnet (779672)
       return 'dispatch';
     default:
       return 'unsupported';
@@ -50,4 +51,49 @@ export const formatCurrency = (amount: string, symbol: string): string => {
   } else {
     return `${num.toFixed(3)} ${symbol}`;
   }
+};
+
+// Get native currency symbol for chain
+export const getNativeCurrency = (chainId: string): string => {
+  const currencies: { [key: string]: string } = {
+    '0x1': 'ETH',
+    '0x89': 'MATIC',
+    '0xa86a': 'AVAX',
+    '0xa869': 'AVAX',
+    '0xa4b1': 'ETH',
+    '0x2105': 'ETH',
+    '0xa': 'ETH',
+    '0xaa36a7': 'ETH',
+    '0x38': 'BNB',
+    '0xfa': 'FTM',
+    '0xbe598': 'AVAX', // Dispatch uses AVAX
+  };
+  return currencies[chainId] || 'ETH';
+};
+
+// Get bridge/messaging protocol name
+export const getBridgeProtocol = (chainId: string): string => {
+  const protocols: { [key: string]: string } = {
+    '0xaa36a7': 'CCIP',
+    '0xbe598': 'Teleporter', // Dispatch Chain
+  };
+  return protocols[chainId] || 'Native';
+};
+
+// Get estimated bridge time
+export const getBridgeTime = (chainId: string): string => {
+  const times: { [key: string]: string } = {
+    '0xaa36a7': '10-20 minutes',
+    '0xbe598': '2-5 seconds', // Dispatch Chain
+  };
+  return times[chainId] || 'Instant';
+};
+
+// Get estimated bridge fee
+export const getBridgeFee = (chainId: string): string => {
+  const fees: { [key: string]: string } = {
+    '0xaa36a7': '~$3-5',
+    '0xbe598': '~$0.01-0.05', // Dispatch Chain
+  };
+  return fees[chainId] || 'Variable';
 };

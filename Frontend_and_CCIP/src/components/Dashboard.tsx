@@ -57,17 +57,20 @@ const Dashboard: React.FC<DashboardProps> = ({ onBackToLanding }) => {
   // AI Generated Config
   const [aiConfig, setAiConfig] = useState<any>(null);
 
-  const networks = [
-    { name: 'Avalanche Fuji', chainId: '0xa869', rpcUrl: 'https://api.avax-test.network/ext/bc/C/rpc', emoji: '🔺' },
-    { name: 'Ethereum Sepolia', chainId: '0xaa36a7', rpcUrl: 'https://sepolia.infura.io/v3/YOUR_KEY', emoji: '🔷' },
-    { name: 'Base', chainId: '0x2105', rpcUrl: 'https://mainnet.base.org', emoji: '🔵' },
-    { name: 'Arbitrum', chainId: '0xa4b1', rpcUrl: 'https://arb1.arbitrum.io/rpc', emoji: '🔷' },
-    { name: 'Polygon', chainId: '0x89', rpcUrl: 'https://polygon-rpc.com', emoji: '🟣' },
-    { name: 'Optimism', chainId: '0xa', rpcUrl: 'https://mainnet.optimism.io', emoji: '🔴' },
-    { name: 'Ethereum', chainId: '0x1', rpcUrl: 'https://mainnet.infura.io/v3/YOUR_KEY', emoji: '💎' },
-    { name: 'Avalanche', chainId: '0xa86a', rpcUrl: 'https://api.avax.network/ext/bc/C/rpc', emoji: '⛰️' },
-  ];
+// File: src/components/Dashboard.tsx (Updated)
+// Add Dispatch Chain to the networks array
 
+const networks = [
+  { name: 'Avalanche Fuji', chainId: '0xa869', rpcUrl: 'https://api.avax-test.network/ext/bc/C/rpc', emoji: '🔺' },
+  { name: 'Ethereum Sepolia', chainId: '0xaa36a7', rpcUrl: 'https://sepolia.infura.io/v3/YOUR_KEY', emoji: '🔷' },
+  { name: 'Dispatch L1 Testnet', chainId: '0xbe598', rpcUrl: 'https://subnets.avax.network/dispatch/testnet/rpc', emoji: '🚀' }, // ADDED
+  { name: 'Base', chainId: '0x2105', rpcUrl: 'https://mainnet.base.org', emoji: '🔵' },
+  { name: 'Arbitrum', chainId: '0xa4b1', rpcUrl: 'https://arb1.arbitrum.io/rpc', emoji: '🔷' },
+  { name: 'Polygon', chainId: '0x89', rpcUrl: 'https://polygon-rpc.com', emoji: '🟣' },
+  { name: 'Optimism', chainId: '0xa', rpcUrl: 'https://mainnet.optimism.io', emoji: '🔴' },
+  { name: 'Ethereum', chainId: '0x1', rpcUrl: 'https://mainnet.infura.io/v3/YOUR_KEY', emoji: '💎' },
+  { name: 'Avalanche', chainId: '0xa86a', rpcUrl: 'https://api.avax.network/ext/bc/C/rpc', emoji: '⛰️' },
+];
   // Check if wallet is already connected on component mount
   useEffect(() => {
     checkWalletConnection();
@@ -213,20 +216,21 @@ const Dashboard: React.FC<DashboardProps> = ({ onBackToLanding }) => {
   };
 
   const getChainName = (chainId: string) => {
-    const chains: { [key: string]: string } = {
-      '0x1': 'Ethereum',
-      '0x89': 'Polygon',
-      '0xa86a': 'Avalanche',
-      '0xa4b1': 'Arbitrum',
-      '0x2105': 'Base',
-      '0xa': 'Optimism',
-      '0xaa36a7': 'Sepolia',
-      '0xa869': 'Avalanche Fuji',
-      '0x38': 'BSC',
-      '0xfa': 'Fantom',
-    };
-    return chains[chainId] || `Chain ${chainId}`;
+  const chains: { [key: string]: string } = {
+    '0x1': 'Ethereum',
+    '0x89': 'Polygon',
+    '0xa86a': 'Avalanche',
+    '0xa4b1': 'Arbitrum',
+    '0x2105': 'Base',
+    '0xa': 'Optimism',
+    '0xaa36a7': 'Sepolia',
+    '0xa869': 'Avalanche Fuji',
+    '0x38': 'BSC',
+    '0xfa': 'Fantom',
+    '0xbe598': 'Dispatch L1', 
   };
+  return chains[chainId] || `Chain ${chainId}`;
+};
 
   const switchNetwork = async (targetChainId: string, rpcUrl: string, networkName: string) => {
     if (!window.ethereum) {
@@ -271,34 +275,35 @@ const Dashboard: React.FC<DashboardProps> = ({ onBackToLanding }) => {
     }
   };
 
-  const getNetworkCurrency = (chainId: string) => {
-    const currencies: { [key: string]: any } = {
-      '0x1': { name: 'Ether', symbol: 'ETH', decimals: 18 },
-      '0x89': { name: 'Polygon', symbol: 'MATIC', decimals: 18 },
-      '0xa86a': { name: 'Avalanche', symbol: 'AVAX', decimals: 18 },
-      '0xa869': { name: 'Avalanche', symbol: 'AVAX', decimals: 18 },
-      '0xa4b1': { name: 'Ether', symbol: 'ETH', decimals: 18 },
-      '0x2105': { name: 'Ether', symbol: 'ETH', decimals: 18 },
-      '0xa': { name: 'Ether', symbol: 'ETH', decimals: 18 },
-      '0xaa36a7': { name: 'Ether', symbol: 'ETH', decimals: 18 },
-    };
-    return currencies[chainId] || { name: 'Ether', symbol: 'ETH', decimals: 18 };
+ const getNetworkCurrency = (chainId: string) => {
+  const currencies: { [key: string]: any } = {
+    '0x1': { name: 'Ether', symbol: 'ETH', decimals: 18 },
+    '0x89': { name: 'Polygon', symbol: 'MATIC', decimals: 18 },
+    '0xa86a': { name: 'Avalanche', symbol: 'AVAX', decimals: 18 },
+    '0xa869': { name: 'Avalanche', symbol: 'AVAX', decimals: 18 },
+    '0xa4b1': { name: 'Ether', symbol: 'ETH', decimals: 18 },
+    '0x2105': { name: 'Ether', symbol: 'ETH', decimals: 18 },
+    '0xa': { name: 'Ether', symbol: 'ETH', decimals: 18 },
+    '0xaa36a7': { name: 'Ether', symbol: 'ETH', decimals: 18 },
+    '0xbe598': { name: 'Dispatch L1', symbol: 'DIS', decimals: 18 }, // ADDED
   };
+  return currencies[chainId] || { name: 'Ether', symbol: 'ETH', decimals: 18 };
+};
 
   const getBlockExplorer = (chainId: string) => {
-    const explorers: { [key: string]: string[] } = {
-      '0x1': ['https://etherscan.io'],
-      '0x89': ['https://polygonscan.com'],
-      '0xa86a': ['https://snowtrace.io'],
-      '0xa869': ['https://testnet.snowtrace.io'],
-      '0xa4b1': ['https://arbiscan.io'],
-      '0x2105': ['https://basescan.org'],
-      '0xa': ['https://optimistic.etherscan.io'],
-      '0xaa36a7': ['https://sepolia.etherscan.io'],
-    };
-    return explorers[chainId] || ['https://etherscan.io'];
+  const explorers: { [key: string]: string[] } = {
+    '0x1': ['https://etherscan.io'],
+    '0x89': ['https://polygonscan.com'],
+    '0xa86a': ['https://snowtrace.io'],
+    '0xa869': ['https://testnet.snowtrace.io'],
+    '0xa4b1': ['https://arbiscan.io'],
+    '0x2105': ['https://basescan.org'],
+    '0xa': ['https://optimistic.etherscan.io'],
+    '0xaa36a7': ['https://sepolia.etherscan.io'],
+    '0xbe598': ['https://subnets.avax.network/dispatch'], // ADDED (Dispatch explorer)
   };
-
+  return explorers[chainId] || ['https://etherscan.io'];
+};
   const formatAddress = (address: string) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };

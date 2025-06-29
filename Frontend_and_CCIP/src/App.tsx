@@ -3,6 +3,7 @@
 
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+//import Dashboard from './components/Dashboard';
 import Dashboard from './components/Dashboard';
 import GameDetails from './components/GameDetails';
 import './App.css';
