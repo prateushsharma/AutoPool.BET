@@ -6,6 +6,7 @@ import json
 import time
 import random
 import asyncio
+import datetime
 from data_fetch.get_boosted_tokens import get_tokens
 from betting_pool.query_classifier import classify_token_query
 from fastapi.middleware.cors import CORSMiddleware
@@ -93,6 +94,31 @@ async def initialize_trading_db():
         
         await db.commit()
 
+async def initialize_leaderboard_db():
+    """Initialize leaderboard database for current session results"""
+    os.makedirs("database", exist_ok=True)
+    leaderboard_db_path = os.path.join("database", "leaderboard.db")
+    
+    async with aiosqlite.connect(leaderboard_db_path) as db:
+        # Create current leaderboard table
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS current_leaderboard (
+                wallet_address TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                starting_investment REAL NOT NULL,
+                final_investment REAL NOT NULL,
+                tokens_liquidated REAL NOT NULL,
+                liquidation_value REAL NOT NULL,
+                profit_loss REAL NOT NULL,
+                profit_loss_percentage REAL NOT NULL,
+                liquidation_price REAL NOT NULL,
+                rank_position INTEGER,
+                liquidated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                session_id TEXT NOT NULL
+            )
+        """)
+        await db.commit()
+
 async def reset_trading_db():
     """Complete reset of trading database"""
     os.makedirs("database", exist_ok=True)
@@ -130,6 +156,61 @@ async def set_pool_status(is_over: bool):
             await db.commit()
     except:
         pass
+
+async def update_leaderboard(liquidation_summary, session_id, current_price):
+    """Update leaderboard with latest session results"""
+    try:
+        await initialize_leaderboard_db()
+        leaderboard_db_path = os.path.join("database", "leaderboard.db")
+        users_db_path = os.path.join("database", "users.db")
+        
+        async with aiosqlite.connect(leaderboard_db_path) as lb_db:
+            # Clear previous leaderboard data
+            await lb_db.execute("DELETE FROM current_leaderboard")
+            
+            # Get user names from users database
+            user_names = {}
+            if os.path.exists(users_db_path):
+                async with aiosqlite.connect(users_db_path) as user_db:
+                    cursor = await user_db.execute("SELECT wallet_address, name FROM users")
+                    users_data = await cursor.fetchall()
+                    user_names = {wallet: name for wallet, name in users_data}
+            
+            # Sort liquidation summary by profit_loss_percentage (descending)
+            sorted_results = sorted(liquidation_summary, 
+                                  key=lambda x: x["profit_loss_percentage"], 
+                                  reverse=True)
+            
+            # Insert new leaderboard data with rankings
+            for rank, result in enumerate(sorted_results, 1):
+                wallet_address = result["wallet_address"]
+                user_name = user_names.get(wallet_address, f"User_{wallet_address[:8]}")
+                
+                await lb_db.execute("""
+                    INSERT INTO current_leaderboard 
+                    (wallet_address, name, starting_investment, final_investment, 
+                     tokens_liquidated, liquidation_value, profit_loss, 
+                     profit_loss_percentage, liquidation_price, rank_position, session_id)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    wallet_address,
+                    user_name,
+                    1000.0,  # starting_investment (always 1000)
+                    result["final_investment"],
+                    result["tokens_liquidated"],
+                    result["liquidation_value"],
+                    result["profit_loss"],
+                    result["profit_loss_percentage"],
+                    current_price,
+                    rank,
+                    session_id
+                ))
+            
+            await lb_db.commit()
+            print(f"📊 Leaderboard updated with {len(sorted_results)} participants")
+            
+    except Exception as e:
+        print(f"❌ Error updating leaderboard: {str(e)}")
 
 # Timer Functions
 async def auto_stop_pool():
@@ -246,6 +327,10 @@ async def process_stop_decision(wallet_address: str):
             """)
             await db.commit()
             
+            # Generate session ID and update leaderboard
+            session_id = f"session_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            await update_leaderboard(liquidation_summary, session_id, current_price)
+            
             # Print final summary
             total_liquidation = sum(item["liquidation_value"] for item in liquidation_summary)
             avg_profit_loss = sum(item["profit_loss_percentage"] for item in liquidation_summary) / len(liquidation_summary)
@@ -259,6 +344,7 @@ async def process_stop_decision(wallet_address: str):
             print(f"   📊 Average P&L: {avg_profit_loss:.2f}%")
             print(f"   🏆 Winners: {winners} | 💸 Losers: {losers}")
             print(f"   💾 Results stored in liquidation_results table")
+            print(f"   📊 Leaderboard updated with session: {session_id}")
             print(f"   🔒 POOL LOCKED - Waiting for new users to restart")
             print("=" * 60)
                 
@@ -754,6 +840,10 @@ async def make_trading_decision(request: DecisionRequest):
                     timer_task.cancel()
                     timer_task = None
                 
+                # Generate session ID and update leaderboard
+                session_id = f"session_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
+                await update_leaderboard(liquidation_summary, session_id, current_price)
+                
                 # Get triggering user's final details
                 triggering_user = next((item for item in liquidation_summary if item["wallet_address"] == request.wallet_address), None)
                 
@@ -1153,6 +1243,191 @@ async def reopen_pool():
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@app.get("/leaderboard")
+async def get_current_leaderboard():
+    """
+    Get current session leaderboard with rankings
+    """
+    try:
+        leaderboard_db_path = os.path.join("database", "leaderboard.db")
+        
+        if not os.path.exists(leaderboard_db_path):
+            return {
+                "leaderboard": [],
+                "total_participants": 0,
+                "session_info": {
+                    "session_id": None,
+                    "liquidated_at": None
+                },
+                "message": "No leaderboard data found. Complete a trading session first."
+            }
+        
+        async with aiosqlite.connect(leaderboard_db_path) as db:
+            # Get leaderboard data ordered by rank
+            cursor = await db.execute("""
+                SELECT wallet_address, name, starting_investment, final_investment,
+                       tokens_liquidated, liquidation_value, profit_loss, 
+                       profit_loss_percentage, liquidation_price, rank_position,
+                       liquidated_at, session_id
+                FROM current_leaderboard 
+                ORDER BY rank_position ASC
+            """)
+            rows = await cursor.fetchall()
+            
+            if not rows:
+                return {
+                    "leaderboard": [],
+                    "total_participants": 0,
+                    "session_info": {
+                        "session_id": None,
+                        "liquidated_at": None
+                    },
+                    "message": "No leaderboard data available"
+                }
+            
+            leaderboard = []
+            for row in rows:
+                # Determine medal/status
+                rank = row[9]
+                if rank == 1:
+                    medal = "🥇"
+                    status = "WINNER"
+                elif rank == 2:
+                    medal = "🥈"
+                    status = "RUNNER-UP"
+                elif rank == 3:
+                    medal = "🥉"
+                    status = "THIRD PLACE"
+                else:
+                    medal = f"#{rank}"
+                    status = "PARTICIPANT"
+                
+                # Determine profit/loss indicator
+                pnl_indicator = "📈" if row[6] >= 0 else "📉"
+                
+                leaderboard.append({
+                    "rank": rank,
+                    "medal": medal,
+                    "status": status,
+                    "wallet_address": row[0],
+                    "name": row[1],
+                    "starting_investment": row[2],
+                    "final_investment": row[3],
+                    "tokens_liquidated": row[4],
+                    "liquidation_value": row[5],
+                    "profit_loss": row[6],
+                    "profit_loss_percentage": row[7],
+                    "liquidation_price": row[8],
+                    "pnl_indicator": pnl_indicator,
+                    "liquidated_at": row[10]
+                })
+            
+            # Get session info from first row
+            session_info = {
+                "session_id": rows[0][11],
+                "liquidated_at": rows[0][10],
+                "total_participants": len(rows),
+                "liquidation_price": rows[0][8]
+            }
+            
+            # Calculate statistics
+            total_profit_loss = sum(participant["profit_loss"] for participant in leaderboard)
+            avg_profit_loss = total_profit_loss / len(leaderboard) if leaderboard else 0
+            winners = len([p for p in leaderboard if p["profit_loss"] >= 0])
+            losers = len(leaderboard) - winners
+            best_performer = leaderboard[0] if leaderboard else None
+            worst_performer = leaderboard[-1] if leaderboard else None
+            
+            return {
+                "leaderboard": leaderboard,
+                "total_participants": len(leaderboard),
+                "session_info": session_info,
+                "statistics": {
+                    "total_profit_loss": round(total_profit_loss, 2),
+                    "average_profit_loss": round(avg_profit_loss, 2),
+                    "average_profit_loss_percentage": round(avg_profit_loss / 1000 * 100, 2) if avg_profit_loss else 0,
+                    "winners": winners,
+                    "losers": losers,
+                    "best_performer": {
+                        "name": best_performer["name"] if best_performer else None,
+                        "profit_percentage": best_performer["profit_loss_percentage"] if best_performer else None
+                    },
+                    "worst_performer": {
+                        "name": worst_performer["name"] if worst_performer else None,
+                        "profit_percentage": worst_performer["profit_loss_percentage"] if worst_performer else None
+                    }
+                },
+                "message": f"Leaderboard for {session_info['session_id']} with {len(leaderboard)} participants"
+            }
+            
+    except Exception as e:
+        return {
+            "leaderboard": [],
+            "total_participants": 0,
+            "session_info": {
+                "session_id": None,
+                "liquidated_at": None
+            },
+            "error": str(e),
+            "message": "Error retrieving leaderboard data"
+        }
+
+@app.get("/leaderboard/summary")
+async def get_leaderboard_summary():
+    """
+    Get condensed leaderboard summary with top 3 and key stats
+    """
+    try:
+        leaderboard_data = await get_current_leaderboard()
+        
+        if not leaderboard_data["leaderboard"]:
+            return {
+                "top_3": [],
+                "statistics": {},
+                "message": "No leaderboard data available"
+            }
+        
+        leaderboard = leaderboard_data["leaderboard"]
+        
+        # Get top 3
+        top_3 = leaderboard[:3]
+        
+        # Simplified stats
+        stats = leaderboard_data["statistics"]
+        
+        return {
+            "top_3": [
+                {
+                    "rank": p["rank"],
+                    "medal": p["medal"],
+                    "name": p["name"],
+                    "wallet_address": p["wallet_address"][:10] + "...",
+                    "profit_loss_percentage": p["profit_loss_percentage"],
+                    "final_investment": p["final_investment"],
+                    "pnl_indicator": p["pnl_indicator"]
+                } for p in top_3
+            ],
+            "statistics": {
+                "total_participants": leaderboard_data["total_participants"],
+                "average_profit_loss_percentage": stats["average_profit_loss_percentage"],
+                "winners": stats["winners"],
+                "losers": stats["losers"]
+            },
+            "session_info": {
+                "session_id": leaderboard_data["session_info"]["session_id"],
+                "liquidated_at": leaderboard_data["session_info"]["liquidated_at"]
+            },
+            "message": f"Top 3 performers from latest session"
+        }
+        
+    except Exception as e:
+        return {
+            "top_3": [],
+            "statistics": {},
+            "error": str(e),
+            "message": "Error retrieving leaderboard summary"
+        }
 
 if __name__ == "__main__":
     import uvicorn
