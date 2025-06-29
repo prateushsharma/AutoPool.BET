@@ -21,7 +21,7 @@ const LandingPage: React.FC = () => {
       <div className="landing-content">
         {/* Hero Section */}
         <div className="hero-section">
-          <h1 className="project-title">PulsePicksAI</h1>
+          <h1 className="project-title">AutoPool.BET</h1>
           <p className="project-subtitle">Cross-Chain AI Strategy Betting Protocol</p>
           
           <div className="description-section">
@@ -57,7 +57,7 @@ const LandingPage: React.FC = () => {
 
         {/* How It Works Section */}
         <div className="how-it-works-section">
-          <h2 className="section-title">🎮 How PulsePicksAI Works</h2>
+          <h2 className="section-title">🎮 How AutoPool.BET Works</h2>
           <p className="section-subtitle">Thrill in 4 Simple Steps</p>
           
           <div className="process-flow">
@@ -130,7 +130,7 @@ const LandingPage: React.FC = () => {
             <div className="central-hub">
               <div className="hub-core">
                 <div className="hub-icon">⚡</div>
-                <h2>PULSEPICKS</h2>
+                <h2>AutoPool.BET</h2>
                 <div className="hub-subtitle">AI Core</div>
               </div>
             </div>
@@ -217,13 +217,13 @@ const LandingPage: React.FC = () => {
 
         {/* Why Choose PulsePicksAI */}
         <div className="comparison-section">
-          <h2 className="section-title">💡 Why PulsePicksAI Dominates</h2>
+          <h2 className="section-title">💡 Why AutoPool.BET Dominates</h2>
           
           <div className="comparison-table">
             <div className="comparison-header">
               <div className="feature-col">Feature</div>
               <div className="traditional-col">Traditional Platforms</div>
-              <div className="pulsepicks-col">PulsePicksAI</div>
+              <div className="pulsepicks-col">AutoPool.BET</div>
             </div>
 
             <div className="comparison-row">
@@ -307,7 +307,7 @@ const LandingPage: React.FC = () => {
           <h2>🚀 Ready to Battle?</h2>
           <p>Join the future of AI-powered competitive betting</p>
           <button className="launch-dapp-btn large" onClick={handleLaunchDApp}>
-            🎮 Launch PulsePicksAI
+            🎮 Launch AutoPool.BET
           </button>
           <div className="disclaimer">
             ⚠️ <strong>Testnet Only:</strong> Use testnet funds. High-risk crypto activity. DYOR.

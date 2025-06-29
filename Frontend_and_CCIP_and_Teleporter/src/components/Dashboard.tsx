@@ -565,7 +565,7 @@ const networks = [
     <div className="dashboard-container">
       <div className="dashboard-header">
         <div className="header-left">
-          <h1 className="dashboard-title">PulsePicksAI</h1>
+          <h1 className="dashboard-title">AutoPool.BET</h1>
           <span className="dashboard-subtitle">AI Strategy Betting Protocol</span>
         </div>
         <div className="header-right">

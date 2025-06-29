@@ -1,4 +1,4 @@
-# PulsePicksAI: Competitive Strategy Betting Protocol V2.0
+# AutoPool.BET: Competitive Strategy Betting Protocol V2.0
 ## Revolutionary Multi-Chain AI-Powered Strategy Competition Platform
 
 **Version**: 2.0  
@@ -10,7 +10,7 @@
 
 ## Executive Summary
 
-PulsePicksAI represents a paradigm shift in decentralized prediction markets by introducing **competitive pool creation** where pool creators become active participants, competing alongside other strategists in AI-evaluated strategy competitions. This revolutionary approach eliminates the traditional house-edge model, creating a truly peer-to-peer strategic betting environment.
+AutoPool.BET represents a paradigm shift in decentralized prediction markets by introducing **competitive pool creation** where pool creators become active participants, competing alongside other strategists in AI-evaluated strategy competitions. This revolutionary approach eliminates the traditional house-edge model, creating a truly peer-to-peer strategic betting environment.
 
 ### Key Innovations:
 - **Creator-as-Competitor Model**: Pool creators participate as players, not just infrastructure providers
@@ -80,7 +80,7 @@ PulsePicksAI represents a paradigm shift in decentralized prediction markets by 
 
 ### 2.1 Revolutionary Pool Creation Mechanism
 
-Traditional prediction markets suffer from centralized house-edge models. PulsePicksAI eliminates this by making **pool creators active participants** who must compete with their own strategies.
+Traditional prediction markets suffer from centralized house-edge models. AutoPool.BET eliminates this by making **pool creators active participants** who must compete with their own strategies.
 
 #### Pool Creation Flow:
 1. **Creator Investment**: Provides initial liquidity (e.g., 100 BETmain)
@@ -180,7 +180,7 @@ function calculateCreatorReward(uint256 competitionId, address creator)
 
 ### 3.1 The Confidence Factor Innovation
 
-Traditional betting systems only consider prediction accuracy. PulsePicksAI introduces **investment amount as confidence signal**, creating a sophisticated risk-reward matrix.
+Traditional betting systems only consider prediction accuracy. AutoPool.BET introduces **investment amount as confidence signal**, creating a sophisticated risk-reward matrix.
 
 #### Mathematical Foundation:
 
@@ -228,7 +228,7 @@ Player C Reward = (9.0/81.0) × 137.75 = 15.3 BETmain
 
 ### 4.1 Hybrid Bridge Protocol
 
-PulsePicksAI implements a sophisticated dual-bridge system:
+AutoPool.BET implements a sophisticated dual-bridge system:
 
 **Native Avalanche Chains** (Fuji ↔ Dispatch):
 - **Interchain Messaging (ICM)**: Strategy submission and result distribution
@@ -643,7 +643,7 @@ console.log('Joined via Teleporter:', result.txHash);
 
 ## 11. Conclusion
 
-PulsePicksAI V2.0 represents a fundamental evolution in decentralized prediction markets by introducing the revolutionary **creator-as-competitor model**. This innovation eliminates traditional house edges, creates true peer-to-peer strategic competition, and aligns incentives across all participants.
+AutoPool.BET V2.0 represents a fundamental evolution in decentralized prediction markets by introducing the revolutionary **creator-as-competitor model**. This innovation eliminates traditional house edges, creates true peer-to-peer strategic competition, and aligns incentives across all participants.
 
 ### Key Technical Achievements:
 
@@ -669,7 +669,7 @@ Reward = (Investment × AI_Score / Total_Confidence_Weight) × Competition_Pool
 This creates optimal game theory dynamics where participants must balance strategy quality with investment confidence, while pool creators risk their capital alongside other competitors.
 
 ### Cross-Chain Achievement:
-By successfully combining **Avalanche's native interchain capabilities** with **external CCIP bridges**, PulsePicksAI creates the first truly multi-chain competitive strategy platform that maintains sub-second execution speeds while enabling global participation from any supported blockchain.
+By successfully combining **Avalanche's native interchain capabilities** with **external CCIP bridges**, AutoPool.BET creates the first truly multi-chain competitive strategy platform that maintains sub-second execution speeds while enabling global participation from any supported blockchain.
 
 The future of decentralized prediction markets is not about house edges or centralized advantages—it's about **pure strategic competition** where the best strategies and strongest convictions win, regardless of the blockchain they originate from.
 
@@ -697,4 +697,4 @@ The future of decentralized prediction markets is not about house edges or centr
 
 ---
 
-*PulsePicksAI: Where Strategy Meets Confidence, Across All Chains*
+*AutoPool.BET: Where Strategy Meets Confidence, Across All Chains*
